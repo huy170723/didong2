@@ -1,14 +1,15 @@
 // components/ui/collapsible.tsx
 
 // Nếu lỗi module này, thay bằng:
-import { useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Animated, Text, TouchableOpacity, View } from 'react-native';
 
-export default function Collapsible({ 
-  title, 
-  children 
-}: { 
-  title: string; 
+
+export default function Collapsible({
+  title,
+  children
+}: {
+  title: string;
   children: React.ReactNode;
 }) {
   const [isOpen, setIsOpen] = useState(false);

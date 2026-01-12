@@ -1,289 +1,245 @@
-import { Car, Filter } from 'lucide-react-native';
-import { useEffect, useState } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect, useRouter } from 'expo-router';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    FlatList,
-    RefreshControl,
-    SafeAreaView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  Image,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import CarCard from '../../components/car/CarCard';
-import { colors } from '../../constants/colors';
-import { carService } from '../../services/car.service';
+
+import colors from '@/constants/colors';
+import { useAuth } from '@/contexts/AuthContext';
+import { carService } from '@/services/firebase/carService';
+import { favoriteService } from '@/services/firebase/favoriteService';
+import { Car } from '@/types/firebase';
 
 export default function HomeScreen() {
-  const [cars, setCars] = useState([]);
+  const [cars, setCars] = useState<Car[]>([]);
+  const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [isConnected, setIsConnected] = useState(true);
 
-  const fetchCars = async () => {
-    try {
-      console.log('[Home] Bắt đầu gọi API lấy xe...');
-      
-      setError(null);
-      const response = await carService.getAllCars();
-      
-      console.log('[Home] API trả về:', response);
-      
-      if (response.success) {
-        setCars(response.data || []);
-        setIsConnected(true);
-        console.log(`[Home] Đã tải ${response.data?.length || 0} xe`);
+  const { user } = useAuth();
+  const router = useRouter();
+  const theme = colors.light;
+
+  useEffect(() => {
+    loadCars();
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (user?.uid) {
+        loadUserFavorites();
       } else {
-        setError(response.message || 'Không thể tải danh sách xe');
-        Alert.alert('Lỗi', response.message || 'Không thể tải danh sách xe');
+        setFavoriteIds([]);
       }
-    } catch (error: any) {
-      console.error('[Home] Lỗi gọi API:', error);
-      
-      setError(error.message || 'Lỗi kết nối máy chủ');
-      setIsConnected(false);
-      
-      // Hiển thị hướng dẫn nếu lỗi mạng
-      if (error.code === 'NETWORK_ERROR') {
-        Alert.alert(
-          'Lỗi kết nối',
-          'Không thể kết nối đến máy chủ. Vui lòng:\n\n1. Kiểm tra XAMPP đã chạy chưa\n2. Kiểm tra IP trong config.ts\n3. Kiểm tra kết nối mạng',
-          [{ text: 'OK' }]
-        );
-      }
+    }, [user])
+  );
+
+  const loadCars = async () => {
+    try {
+      const res = await carService.getAllCars(20);
+      setCars(res.cars);
+    } catch (err) {
+      console.error(err);
     } finally {
       setLoading(false);
-      setRefreshing(false);
     }
   };
 
-  useEffect(() => {
-    fetchCars();
-  }, []);
-
-  const onRefresh = () => {
-    setRefreshing(true);
-    fetchCars();
+  const loadUserFavorites = async () => {
+    try {
+      const favCars = await favoriteService.getUserFavorites(user!.uid);
+      setFavoriteIds(favCars.map((car) => car.id));
+    } catch (err) {
+      console.error("Lỗi tải yêu thích:", err);
+    }
   };
 
-  const retryConnection = () => {
-    setLoading(true);
-    setError(null);
-    fetchCars();
+  const handleToggleFavorite = async (carId: string) => {
+    if (!user?.uid) {
+      Alert.alert("Thông báo", "Vui lòng đăng nhập để lưu xe yêu thích");
+      return;
+    }
+    const isLiked = favoriteIds.includes(carId);
+    if (isLiked) {
+      setFavoriteIds((prev) => prev.filter((id) => id !== carId));
+    } else {
+      setFavoriteIds((prev) => [...prev, carId]);
+    }
+    try {
+      if (isLiked) {
+        await favoriteService.removeFavorite(user.uid, carId);
+      } else {
+        await favoriteService.addFavorite(user.uid, carId);
+      }
+    } catch (error) {
+      loadUserFavorites();
+      Alert.alert("Lỗi", "Không thể cập nhật trạng thái yêu thích");
+    }
   };
 
-  if (loading && !refreshing) {
+  if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={styles.loadingText}>Đang tải dữ liệu từ máy chủ...</Text>
-        <Text style={styles.loadingSubtext}>Kiểm tra XAMPP và kết nối mạng</Text>
+      <View style={[styles.center, { backgroundColor: '#FFFFFF' }]}>
+        <ActivityIndicator size="small" color="#000000" />
       </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={[styles.container, { backgroundColor: '#FFFFFF' }]}>
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+
+      {/* HEADER: Nền trắng chữ đen thuần túy */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.title}>CarShop</Text>
-          <Text style={styles.subtitle}>
-            {cars.length} xe đang có sẵn
-            {!isConnected && ' (Đang dùng dữ liệu cũ)'}
-          </Text>
+          <Text style={styles.greeting}>CHÀO MỪNG</Text>
+          <Text style={styles.mainTitle}>Khám phá</Text>
         </View>
-        <TouchableOpacity 
-          style={styles.filterButton}
-          onPress={() => Alert.alert('Thông báo', 'Chức năng đang phát triển')}
+        <TouchableOpacity
+          style={styles.searchIconBtn}
+          onPress={() => router.push('/(tabs)/Search')}
         >
-          <Filter size={24} color={colors.primary} />
+          <Ionicons name="search-outline" size={24} color="#000000" />
         </TouchableOpacity>
       </View>
 
-      {error && (
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorTitle}>⚠️ Lỗi kết nối</Text>
-          <Text style={styles.errorText}>{error}</Text>
-          
-          <View style={styles.debugInfo}>
-            <Text style={styles.debugTitle}>Debug Info:</Text>
-            <Text style={styles.debugText}>• Kiểm tra XAMPP đã chạy chưa</Text>
-            <Text style={styles.debugText}>• Kiểm tra Apache và MySQL</Text>
-            <Text style={styles.debugText}>• Kiểm tra IP trong config.ts</Text>
-            <Text style={styles.debugText}>• Thiết bị và máy tính cùng mạng WiFi</Text>
-          </View>
-          
-          <TouchableOpacity 
-            style={styles.retryButton}
-            onPress={retryConnection}
-          >
-            <Text style={styles.retryButtonText}>Thử lại kết nối</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-
       <FlatList
         data={cars}
-        renderItem={({ item }) => <CarCard car={item} />}
-        keyExtractor={(item) => item.id.toString()}
-        contentContainerStyle={styles.list}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-        ListEmptyComponent={
-          !error ? (
-            <View style={styles.empty}>
-              <Car size={64} color={colors.gray} />
-              <Text style={styles.emptyText}>Không có xe nào</Text>
-              <Text style={styles.emptySubtext}>
-                {isConnected 
-                  ? 'Chưa có xe trong hệ thống' 
-                  : 'Không thể tải dữ liệu từ máy chủ'}
-              </Text>
+        keyExtractor={(item) => item.id}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.listContent}
+        renderItem={({ item }) => {
+          const isLiked = favoriteIds.includes(item.id);
+
+          return (
+            <View style={styles.card}>
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={() => router.push(`/car-detail/${item.id}` as any)}
+              >
+                <Image source={{ uri: item.image_url }} style={styles.image} />
+
+                <View style={styles.info}>
+                  <View style={styles.nameRow}>
+                    <Text style={styles.carName} numberOfLines={1}>{item.name}</Text>
+                    <Text style={styles.carPrice}>
+                      {item.price.toLocaleString()} ₫
+                    </Text>
+                  </View>
+                  <Text style={styles.brandText}>{item.brand || 'Luxury Edition'}</Text>
+                </View>
+              </TouchableOpacity>
+
+              {/* Nút yêu thích: Đen/Trắng */}
+              <TouchableOpacity
+                onPress={() => handleToggleFavorite(item.id)}
+                style={styles.favoriteButton}
+              >
+                <Ionicons
+                  name={isLiked ? "heart" : "heart-outline"}
+                  size={20}
+                  color={isLiked ? "#000000" : "#000000"}
+                />
+              </TouchableOpacity>
             </View>
-          ) : null
-        }
-        ListHeaderComponent={
-          cars.length > 0 && error ? (
-            <View style={styles.warningBanner}>
-              <Text style={styles.warningText}>
-                ⚠️ Đang hiển thị dữ liệu cũ từ lần tải trước
-              </Text>
-            </View>
-          ) : null
-        }
+          );
+        }}
       />
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  loadingText: {
-    fontSize: 16,
-    color: colors.text,
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  loadingSubtext: {
-    fontSize: 14,
-    color: colors.textLight,
-    textAlign: 'center',
-  },
+  container: { flex: 1 },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: colors.white,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    alignItems: 'flex-end',
+    paddingHorizontal: 20,
+    marginTop: 60,
+    marginBottom: 20,
   },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: colors.primary,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: colors.gray,
-    marginTop: 2,
-  },
-  filterButton: {
-    padding: 8,
-    borderRadius: 8,
-    backgroundColor: colors.lightPrimary,
-  },
-  list: {
-    padding: 16,
-  },
-  empty: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 50,
-  },
-  emptyText: {
-    fontSize: 16,
-    color: colors.gray,
-    marginTop: 16,
-  },
-  emptySubtext: {
-    fontSize: 14,
-    color: colors.textLight,
-    textAlign: 'center',
-    marginTop: 8,
-  },
-  errorContainer: {
-    backgroundColor: colors.warningLight,
-    margin: 16,
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.warning,
-  },
-  errorTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: colors.warning,
-    marginBottom: 8,
-  },
-  errorText: {
-    fontSize: 14,
-    color: colors.text,
-    marginBottom: 16,
-  },
-  debugInfo: {
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 16,
-  },
-  debugTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.text,
-    marginBottom: 8,
-  },
-  debugText: {
+  greeting: {
     fontSize: 12,
-    color: colors.textLight,
-    marginBottom: 4,
+    fontWeight: '700',
+    color: '#888888',
+    letterSpacing: 1
   },
-  retryButton: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
+  mainTitle: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#000000',
+    marginTop: 2
+  },
+  searchIconBtn: {
+    padding: 5,
+  },
+  listContent: { paddingHorizontal: 20, paddingBottom: 30 },
+  card: {
+    backgroundColor: '#FFFFFF',
+    marginBottom: 30,
+    position: 'relative',
+    // Không dùng border màu, dùng đổ bóng cực nhẹ để tạo khối
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 2,
+    borderRadius: 12,
+  },
+  image: {
+    width: '100%',
+    height: 240,
+    borderRadius: 12,
+    backgroundColor: '#F5F5F5'
+  },
+  info: {
+    paddingVertical: 15,
+    paddingHorizontal: 5
+  },
+  nameRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
   },
-  retryButtonText: {
-    color: colors.white,
+  carName: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#000000',
+    flex: 1,
+    marginRight: 10
+  },
+  carPrice: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '500',
+    color: '#000000'
   },
-  warningBanner: {
-    backgroundColor: colors.warningLight,
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: colors.warning,
+  brandText: {
+    fontSize: 13,
+    color: '#666666',
+    marginTop: 4
   },
-  warningText: {
-    fontSize: 14,
-    color: colors.warning,
-    textAlign: 'center',
+  favoriteButton: {
+    position: 'absolute',
+    top: 15,
+    right: 15,
+    backgroundColor: '#FFFFFF',
+    padding: 8,
+    borderRadius: 20,
+    // Đổ bóng cho nút tròn
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 5,
   },
 });

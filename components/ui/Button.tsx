@@ -1,12 +1,13 @@
+import React from 'react';
 import {
-    ActivityIndicator,
-    StyleSheet,
-    Text,
-    TextStyle,
-    TouchableOpacity,
-    ViewStyle,
+  ActivityIndicator,
+  StyleSheet,
+  Text,
+  TextStyle,
+  TouchableOpacity,
+  ViewStyle,
 } from 'react-native';
-import { colors } from '../../constants/colors';
+import colors from '../../constants/colors';
 
 interface ButtonProps {
   title: string;
@@ -29,12 +30,15 @@ export default function Button({
   style,
   textStyle,
 }: ButtonProps) {
+  // Sử dụng light mode trực tiếp
+  const theme = colors.light;
+
   const getButtonStyle = () => {
     const baseStyle = styles.base;
     const variantStyle = styles[variant];
     const sizeStyle = styles[size];
     const disabledStyle = disabled ? styles.disabled : {};
-    
+
     return [baseStyle, variantStyle, sizeStyle, disabledStyle, style];
   };
 
@@ -42,7 +46,7 @@ export default function Button({
     const baseTextStyle = styles.baseText;
     const variantTextStyle = styles[`${variant}Text`];
     const sizeTextStyle = styles[`${size}Text`];
-    
+
     return [baseTextStyle, variantTextStyle, sizeTextStyle, textStyle];
   };
 
@@ -54,9 +58,9 @@ export default function Button({
       activeOpacity={0.8}
     >
       {loading ? (
-        <ActivityIndicator 
-          color={variant === 'outline' ? colors.primary : colors.white} 
-          size="small" 
+        <ActivityIndicator
+          color={variant === 'outline' ? theme.primary : theme.white}
+          size="small"
         />
       ) : (
         <Text style={getTextStyle()}>{title}</Text>
@@ -64,6 +68,8 @@ export default function Button({
     </TouchableOpacity>
   );
 }
+
+const theme = colors.light; // Định nghĩa theme để StyleSheet sử dụng
 
 const styles = StyleSheet.create({
   base: {
@@ -75,32 +81,32 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   primary: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
+    backgroundColor: theme.primary,
+    borderColor: theme.primary,
   },
   primaryText: {
-    color: colors.white,
+    color: theme.white,
   },
   secondary: {
-    backgroundColor: colors.secondary,
-    borderColor: colors.secondary,
+    backgroundColor: theme.secondary,
+    borderColor: theme.secondary,
   },
   secondaryText: {
-    color: colors.white,
+    color: theme.white,
   },
   outline: {
     backgroundColor: 'transparent',
-    borderColor: colors.primary,
+    borderColor: theme.primary,
   },
   outlineText: {
-    color: colors.primary,
+    color: theme.primary,
   },
   danger: {
-    backgroundColor: colors.danger,
-    borderColor: colors.danger,
+    backgroundColor: theme.danger,
+    borderColor: theme.danger,
   },
   dangerText: {
-    color: colors.white,
+    color: theme.white,
   },
   small: {
     paddingHorizontal: 16,

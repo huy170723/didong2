@@ -1,6 +1,6 @@
 import { Link, router } from 'expo-router';
 import { ArrowLeft, Mail } from 'lucide-react-native';
-import { useState } from 'react';
+import React, { useState } from "react";
 import {
   Alert,
   KeyboardAvoidingView,
@@ -12,7 +12,6 @@ import {
 } from 'react-native';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
-import { colors } from '../../constants/colors';
 
 export default function ForgotPasswordScreen() {
   const [email, setEmail] = useState('');
@@ -31,13 +30,13 @@ export default function ForgotPasswordScreen() {
 
     try {
       setLoading(true);
-      // TODO: Implement reset password API
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      // Giả lập gửi reset password
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
       Alert.alert(
         'Thành công',
-        'Link đặt lại mật khẩu đã được gửi đến email của bạn',
-        [{ text: 'OK', onPress: () => router.back() }]
+        'Link đặt lại mật khẩu đã được gửi đến email của bạn. Vui lòng kiểm tra hộp thư.',
+        [{ text: 'Về trang đăng nhập', onPress: () => router.replace('/login') }]
       );
     } catch (error) {
       Alert.alert('Lỗi', 'Đã xảy ra lỗi. Vui lòng thử lại');
@@ -48,52 +47,61 @@ export default function ForgotPasswordScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: '#FFFFFF' }]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <View style={styles.content}>
-        <TouchableOpacity 
+        {/* Nút Back - Đổi sang màu Đen */}
+        <TouchableOpacity
           style={styles.backButton}
           onPress={() => router.back()}
         >
-          <ArrowLeft size={24} color={colors.text} />
+          <ArrowLeft size={24} color="#000000" />
         </TouchableOpacity>
 
         <View style={styles.header}>
-          <Text style={styles.title}>Quên mật khẩu</Text>
-          <Text style={styles.subtitle}>
-            Nhập email của bạn để nhận link đặt lại mật khẩu
+          <Text style={[styles.title, { color: '#000000' }]}>Quên mật khẩu</Text>
+          <Text style={[styles.subtitle, { color: '#666' }]}>
+            Nhập email của bạn để nhận link đặt lại mật khẩu qua email
           </Text>
         </View>
 
         <View style={styles.form}>
           <Input
-            placeholder="Email"
+            placeholder="Email của bạn"
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
             autoCapitalize="none"
-            leftIcon={<Mail size={20} color={colors.gray} />}
+            // Màu icon và màu chữ input đổi sang tông đen/xám đậm
+            leftIcon={<Mail size={20} color="#666666" />}
+            style={{ backgroundColor: '#F9F9F9', borderColor: '#EEEEEE', color: '#000000' }}
           />
 
           <Button
             title="Gửi link đặt lại mật khẩu"
             onPress={handleResetPassword}
             loading={loading}
-            style={styles.resetButton}
+            // Nút bấm đổi sang nền Đen chữ Trắng
+            style={StyleSheet.flatten([
+              styles.resetButton,
+              { backgroundColor: '#000000' }
+            ])}
+            textStyle={{ color: '#FFFFFF' }}
           />
 
           <View style={styles.divider}>
-            <View style={styles.dividerLine} />
+            <View style={[styles.dividerLine, { backgroundColor: '#EEEEEE' }]} />
             <Text style={styles.dividerText}>Hoặc</Text>
-            <View style={styles.dividerLine} />
+            <View style={[styles.dividerLine, { backgroundColor: '#EEEEEE' }]} />
           </View>
 
-          <Link href="/(auth)/login" asChild>
-            <Button
-              title="Quay lại đăng nhập"
-              variant="outline"
-            />
+          <Link href="/login" asChild>
+            <TouchableOpacity style={styles.backToLoginBtn}>
+              <Text style={{ color: '#000000', fontWeight: 'bold', textAlign: 'center' }}>
+                Quay lại đăng nhập
+              </Text>
+            </TouchableOpacity>
           </Link>
         </View>
       </View>
@@ -104,7 +112,6 @@ export default function ForgotPasswordScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
   },
   content: {
     flex: 1,
@@ -113,43 +120,52 @@ const styles = StyleSheet.create({
   },
   backButton: {
     position: 'absolute',
-    top: 50,
-    left: 24,
+    top: 60,
+    left: 20,
     padding: 8,
   },
   header: {
-    marginBottom: 32,
+    marginBottom: 40,
   },
   title: {
-    fontSize: 32,
+    fontSize: 30,
     fontWeight: 'bold',
-    color: colors.text,
-    marginBottom: 8,
+    marginBottom: 12,
   },
   subtitle: {
     fontSize: 16,
-    color: colors.textLight,
     lineHeight: 24,
   },
   form: {
-    gap: 16,
+    gap: 10,
   },
   resetButton: {
-    marginTop: 8,
+    marginTop: 10,
+    borderRadius: 12,
+    height: 55,
+    justifyContent: 'center',
+    // Đổ bóng nhẹ cho nút đen thêm sang trọng
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   divider: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: 24,
+    marginVertical: 25,
   },
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: colors.border,
   },
   dividerText: {
     marginHorizontal: 16,
-    color: colors.textLight,
+    color: '#999',
     fontSize: 14,
   },
+  backToLoginBtn: {
+    padding: 15,
+  }
 });

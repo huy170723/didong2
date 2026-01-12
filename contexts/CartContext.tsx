@@ -9,8 +9,8 @@ interface CartItem {
 interface CartContextType {
   items: CartItem[];
   addToCart: (car: Car) => void;
-  removeFromCart: (carId: number) => void;
-  updateQuantity: (carId: number, quantity: number) => void;
+  removeFromCart: (carId: string) => void;
+  updateQuantity: (carId: string, quantity: number) => void;
   clearCart: () => void;
   getTotalPrice: () => number;
   getTotalItems: () => number;
@@ -37,11 +37,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
-  const removeFromCart = (carId: number) => {
+  const removeFromCart = (carId: string) => {
     setItems(prevItems => prevItems.filter(item => item.car.id !== carId));
   };
 
-  const updateQuantity = (carId: number, quantity: number) => {
+  const updateQuantity = (carId: string, quantity: number) => {
     if (quantity < 1) {
       removeFromCart(carId);
       return;
@@ -59,9 +59,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   };
 
   const getTotalPrice = () => {
-    return items.reduce((total, item) => {
-      return total + (item.car.price * item.quantity);
-    }, 0);
+    return items.reduce((total, item) => total + item.car.price * item.quantity, 0);
   };
 
   const getTotalItems = () => {

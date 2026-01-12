@@ -1,13 +1,13 @@
 import React from 'react';
 import {
-    StyleSheet,
-    Text,
-    TextInput,
-    TextInputProps,
-    View,
-    ViewStyle,
+  StyleSheet,
+  Text,
+  TextInput,
+  TextInputProps,
+  View,
+  ViewStyle,
 } from 'react-native';
-import { colors } from '../../constants/colors';
+import colors from '../../constants/colors'; // import object theme { light, dark }
 
 interface InputProps extends TextInputProps {
   label?: string;
@@ -26,32 +26,37 @@ export default function Input({
   style,
   ...props
 }: InputProps) {
+  // Sử dụng light mode trực tiếp (cách 2)
+  const theme = colors.light;
+
   return (
     <View style={[styles.container, containerStyle]}>
       {label && <Text style={styles.label}>{label}</Text>}
-      
+
       <View style={styles.inputContainer}>
         {leftIcon && <View style={styles.leftIcon}>{leftIcon}</View>}
-        
+
         <TextInput
           style={[
             styles.input,
-            leftIcon && styles.inputWithLeftIcon,
-            rightIcon && styles.inputWithRightIcon,
+            leftIcon ? styles.inputWithLeftIcon : undefined,
+            rightIcon ? styles.inputWithRightIcon : undefined,
             error && styles.inputError,
             style,
           ]}
-          placeholderTextColor={colors.textLighter}
+          placeholderTextColor={theme.textLighter}
           {...props}
         />
-        
+
         {rightIcon && <View style={styles.rightIcon}>{rightIcon}</View>}
       </View>
-      
+
       {error && <Text style={styles.errorText}>{error}</Text>}
     </View>
   );
 }
+
+const theme = colors.light; // Định nghĩa theme ở đây để dùng trong StyleSheet
 
 const styles = StyleSheet.create({
   container: {
@@ -60,21 +65,21 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: '500',
-    color: colors.text,
+    color: theme.text,
     marginBottom: 8,
   },
   inputContainer: {
     position: 'relative',
   },
   input: {
-    backgroundColor: colors.white,
+    backgroundColor: theme.white || '#ffffff', // fallback nếu không có white trong theme
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: theme.border,
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
     fontSize: 16,
-    color: colors.text,
+    color: theme.text,
     minHeight: 50,
   },
   inputWithLeftIcon: {
@@ -84,7 +89,7 @@ const styles = StyleSheet.create({
     paddingRight: 48,
   },
   inputError: {
-    borderColor: colors.danger,
+    borderColor: theme.danger,
   },
   leftIcon: {
     position: 'absolute',
@@ -100,7 +105,7 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: 12,
-    color: colors.danger,
+    color: theme.danger,
     marginTop: 4,
     marginLeft: 4,
   },

@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Link, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
   Alert,
@@ -14,7 +14,6 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { colors } from '../../constants/colors';
 import { useAuth } from '../../contexts/AuthContext';
 
 const Register = () => {
@@ -35,72 +34,37 @@ const Register = () => {
       Alert.alert('Lỗi', 'Vui lòng nhập họ tên');
       return false;
     }
-
-    if (!email.trim()) {
-      Alert.alert('Lỗi', 'Vui lòng nhập email');
-      return false;
-    }
-
-    if (!/\S+@\S+\.\S+/.test(email)) {
+    if (!email.trim() || !/\S+@\S+\.\S+/.test(email)) {
       Alert.alert('Lỗi', 'Email không hợp lệ');
       return false;
     }
-
-    if (!password.trim()) {
-      Alert.alert('Lỗi', 'Vui lòng nhập mật khẩu');
-      return false;
-    }
-
     if (password.length < 6) {
       Alert.alert('Lỗi', 'Mật khẩu phải có ít nhất 6 ký tự');
       return false;
     }
-
     if (password !== confirmPassword) {
       Alert.alert('Lỗi', 'Mật khẩu xác nhận không khớp');
       return false;
     }
-
     if (!agreeToTerms) {
       Alert.alert('Lỗi', 'Vui lòng đồng ý với điều khoản sử dụng');
       return false;
     }
-
     return true;
   };
 
   const handleRegister = async () => {
     if (!validateForm()) return;
-
     setIsLoading(true);
-
     try {
       await register(email, password, name);
-
-      // Thành công - hiển thị thông báo
       Alert.alert(
-        '🎉 Đăng ký thành công',
-        'Tài khoản của bạn đã được tạo. Vui lòng đăng nhập để tiếp tục.',
-        [
-          {
-            text: 'Đăng nhập ngay',
-            onPress: () => {
-              // Reset form
-              setName('');
-              setEmail('');
-              setPassword('');
-              setConfirmPassword('');
-              setAgreeToTerms(false);
-
-              // Chuyển đến trang đăng nhập
-              router.replace('/login');
-            }
-          }
-        ]
+        '🎉 Thành công',
+        'Tài khoản đã được tạo. Vui lòng đăng nhập.',
+        [{ text: 'Đăng nhập', onPress: () => router.replace('/login') }]
       );
-
     } catch (error: any) {
-      Alert.alert('❌ Lỗi đăng ký', error.message);
+      Alert.alert('❌ Lỗi', error.message);
     } finally {
       setIsLoading(false);
     }
@@ -108,200 +72,84 @@ const Register = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
       >
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           {/* Header */}
           <View style={styles.header}>
-            <TouchableOpacity
-              style={styles.backButton}
-              onPress={() => router.back()}
-            >
-              <Ionicons name="arrow-back" size={24} color="#333" />
+            <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+              <Ionicons name="arrow-back" size={24} color="#000000" />
             </TouchableOpacity>
 
-            {/* Logo Container - Dùng icon */}
             <View style={styles.logoContainer}>
-              <Ionicons name="car-sport" size={40} color={colors.primary} style={styles.logoIcon} />
+              <Ionicons name="car-sport" size={32} color="#000000" style={styles.logoIcon} />
               <Text style={styles.logoText}>Car Market</Text>
             </View>
           </View>
 
           {/* Title */}
           <View style={styles.titleContainer}>
-            <Text style={styles.title}>Tạo tài khoản mới</Text>
-            <Text style={styles.subtitle}>Đăng ký để bắt đầu mua sắm</Text>
+            <Text style={styles.title}>Đăng ký</Text>
+            <Text style={styles.subtitle}>Tạo tài khoản để trải nghiệm dịch vụ</Text>
           </View>
 
           {/* Form */}
           <View style={styles.form}>
-            {/* Name Input */}
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Họ tên</Text>
-              <View style={styles.inputWrapper}>
-                <Ionicons name="person-outline" size={20} color="#666" style={styles.inputIcon} />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Nhập họ tên của bạn"
-                  placeholderTextColor="#999"
-                  value={name}
-                  onChangeText={setName}
-                  autoCapitalize="words"
-                  editable={!isLoading}
-                />
-              </View>
-            </View>
+            <InputBox label="Họ tên" icon="person-outline" value={name} onChange={setName} placeholder="Nguyễn Văn A" />
+            <InputBox label="Email" icon="mail-outline" value={email} onChange={setEmail} placeholder="email@gmail.com" keyboardType="email-address" />
 
-            {/* Email Input */}
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Email</Text>
-              <View style={styles.inputWrapper}>
-                <Ionicons name="mail-outline" size={20} color="#666" style={styles.inputIcon} />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Nhập email của bạn"
-                  placeholderTextColor="#999"
-                  value={email}
-                  onChangeText={setEmail}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  editable={!isLoading}
-                />
-              </View>
-            </View>
+            <InputBox
+              label="Mật khẩu" icon="lock-closed-outline" value={password} onChange={setPassword} placeholder="••••••"
+              secure={!showPassword}
+              onIconPress={() => setShowPassword(!showPassword)}
+              rightIcon={showPassword ? "eye-off-outline" : "eye-outline"}
+            />
 
-            {/* Password Input */}
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Mật khẩu</Text>
-              <View style={styles.inputWrapper}>
-                <Ionicons name="lock-closed-outline" size={20} color="#666" style={styles.inputIcon} />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Nhập mật khẩu"
-                  placeholderTextColor="#999"
-                  value={password}
-                  onChangeText={setPassword}
-                  secureTextEntry={!showPassword}
-                  editable={!isLoading}
-                />
-                <TouchableOpacity
-                  style={styles.eyeButton}
-                  onPress={() => setShowPassword(!showPassword)}
-                >
-                  <Ionicons
-                    name={showPassword ? "eye-off-outline" : "eye-outline"}
-                    size={20}
-                    color="#666"
-                  />
-                </TouchableOpacity>
-              </View>
-              <Text style={styles.passwordHint}>Mật khẩu ít nhất 6 ký tự</Text>
-            </View>
+            <InputBox
+              label="Xác nhận mật khẩu" icon="lock-closed-outline" value={confirmPassword} onChange={setConfirmPassword} placeholder="••••••"
+              secure={!showConfirmPassword}
+              onIconPress={() => setShowConfirmPassword(!showConfirmPassword)}
+              rightIcon={showConfirmPassword ? "eye-off-outline" : "eye-outline"}
+            />
 
-            {/* Confirm Password Input */}
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Xác nhận mật khẩu</Text>
-              <View style={styles.inputWrapper}>
-                <Ionicons name="lock-closed-outline" size={20} color="#666" style={styles.inputIcon} />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Nhập lại mật khẩu"
-                  placeholderTextColor="#999"
-                  value={confirmPassword}
-                  onChangeText={setConfirmPassword}
-                  secureTextEntry={!showConfirmPassword}
-                  editable={!isLoading}
-                />
-                <TouchableOpacity
-                  style={styles.eyeButton}
-                  onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-                >
-                  <Ionicons
-                    name={showConfirmPassword ? "eye-off-outline" : "eye-outline"}
-                    size={20}
-                    color="#666"
-                  />
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            {/* Terms Checkbox */}
+            {/* Terms */}
             <View style={styles.termsContainer}>
-              <TouchableOpacity
-                style={styles.checkbox}
-                onPress={() => setAgreeToTerms(!agreeToTerms)}
-                disabled={isLoading}
-              >
+              <TouchableOpacity onPress={() => setAgreeToTerms(!agreeToTerms)}>
                 <Ionicons
                   name={agreeToTerms ? "checkbox" : "square-outline"}
-                  size={20}
-                  color={agreeToTerms ? colors.primary : "#666"}
+                  size={22}
+                  color="#000000"
                 />
               </TouchableOpacity>
               <Text style={styles.termsText}>
-                Tôi đồng ý với{' '}
-                <Text style={styles.termsLink}>Điều khoản sử dụng</Text>
-                {' '}và{' '}
-                <Text style={styles.termsLink}>Chính sách bảo mật</Text>
+                Tôi đồng ý với <Text style={{ color: '#000000', fontWeight: 'bold' }}>Điều khoản & Chính sách</Text>
               </Text>
             </View>
 
-            {/* Register Button */}
+            {/* Submit Button - Changed to Black */}
             <TouchableOpacity
               style={[
                 styles.registerButton,
-                isLoading && styles.registerButtonDisabled,
-                !agreeToTerms && styles.registerButtonDisabled
+                (isLoading || !agreeToTerms) && { backgroundColor: '#666' }
               ]}
               onPress={handleRegister}
               disabled={isLoading || !agreeToTerms}
             >
-              {isLoading ? (
-                <Text style={styles.registerButtonText}>Đang đăng ký...</Text>
-              ) : (
-                <>
-                  <Text style={styles.registerButtonText}>Đăng ký</Text>
-                  <Ionicons name="arrow-forward" size={20} color="#fff" />
-                </>
-              )}
+              <Text style={styles.registerButtonText}>
+                {isLoading ? 'Đang xử lý...' : 'Đăng ký ngay'}
+              </Text>
+              {!isLoading && <Ionicons name="arrow-forward" size={20} color="#fff" />}
             </TouchableOpacity>
 
-            {/* Divider */}
-            <View style={styles.divider}>
-              <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>hoặc đăng ký với</Text>
-              <View style={styles.dividerLine} />
-            </View>
-
-            {/* Social Buttons (Optional) */}
-            <View style={styles.socialButtons}>
-              <TouchableOpacity style={styles.socialButton} disabled={isLoading}>
-                <Ionicons name="logo-google" size={24} color="#DB4437" />
-                <Text style={styles.socialButtonText}>Google</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity style={styles.socialButton} disabled={isLoading}>
-                <Ionicons name="logo-facebook" size={24} color="#4267B2" />
-                <Text style={styles.socialButtonText}>Facebook</Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* Login Link */}
             <View style={styles.loginContainer}>
-              <Text style={styles.loginText}>Đã có tài khoản? </Text>
-              <Link href="/login" asChild>
-                <TouchableOpacity disabled={isLoading}>
-                  <Text style={styles.loginLink}>Đăng nhập ngay</Text>
-                </TouchableOpacity>
-              </Link>
+              <Text style={{ color: '#666' }}>Đã có tài khoản? </Text>
+              <TouchableOpacity onPress={() => router.push('/login')}>
+                <Text style={styles.loginLink}>Đăng nhập</Text>
+              </TouchableOpacity>
             </View>
           </View>
         </ScrollView>
@@ -310,190 +158,69 @@ const Register = () => {
   );
 };
 
+// Component con
+const InputBox = ({ label, icon, value, onChange, placeholder, secure = false, rightIcon = null, onIconPress = null, keyboardType = 'default' }: any) => (
+  <View style={styles.inputContainer}>
+    <Text style={styles.label}>{label}</Text>
+    <View style={styles.inputWrapper}>
+      <Ionicons name={icon} size={20} color="#666" style={styles.inputIcon} />
+      <TextInput
+        style={styles.input}
+        placeholder={placeholder}
+        placeholderTextColor="#999"
+        value={value}
+        onChangeText={onChange}
+        secureTextEntry={secure}
+        keyboardType={keyboardType}
+        autoCapitalize="none"
+      />
+      {rightIcon && (
+        <TouchableOpacity onPress={onIconPress}>
+          <Ionicons name={rightIcon} size={20} color="#000" />
+        </TouchableOpacity>
+      )}
+    </View>
+  </View>
+);
+
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  keyboardView: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    paddingHorizontal: 24,
-    paddingBottom: 40,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 20,
-    marginBottom: 30,
-  },
-  backButton: {
-    padding: 8,
-  },
-  logoContainer: {
-    flex: 1,
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'center',
-  },
-  logoIcon: {
-    marginRight: 10,
-  },
-  logoText: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: colors.primary,
-  },
-  titleContainer: {
-    marginBottom: 40,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#666',
-    lineHeight: 22,
-  },
-  form: {
-    flex: 1,
-  },
-  inputContainer: {
-    marginBottom: 20,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 8,
-  },
+  container: { flex: 1, backgroundColor: '#FFFFFF' },
+  keyboardView: { flex: 1 },
+  scrollContent: { paddingHorizontal: 24, paddingBottom: 40 },
+  header: { flexDirection: 'row', alignItems: 'center', marginTop: 10, marginBottom: 20 },
+  backButton: { padding: 8, marginLeft: -10 },
+  logoContainer: { flex: 1, flexDirection: 'row', justifyContent: 'center', alignItems: 'center' },
+  logoIcon: { marginRight: 8 },
+  logoText: { fontSize: 18, fontWeight: 'bold', color: '#000' },
+  titleContainer: { marginBottom: 30 },
+  title: { fontSize: 28, fontWeight: 'bold', color: '#000' },
+  subtitle: { fontSize: 15, color: '#666', marginTop: 5 },
+  form: { flex: 1 },
+  inputContainer: { marginBottom: 18 },
+  label: { fontSize: 14, fontWeight: '600', marginBottom: 8, color: '#000' },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#ddd',
     borderRadius: 12,
-    backgroundColor: '#f9f9f9',
-    paddingHorizontal: 16,
+    paddingHorizontal: 15,
+    borderColor: '#EEE',
+    backgroundColor: '#F9F9F9'
   },
-  inputIcon: {
-    marginRight: 12,
-  },
-  input: {
-    flex: 1,
-    paddingVertical: 14,
-    fontSize: 16,
-    color: '#333',
-  },
-  eyeButton: {
-    padding: 4,
-  },
-  passwordHint: {
-    fontSize: 12,
-    color: '#999',
-    marginTop: 4,
-    marginLeft: 4,
-  },
-  termsContainer: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 32,
-  },
-  checkbox: {
-    marginRight: 12,
-    marginTop: 2,
-    padding: 2,
-  },
-  termsText: {
-    flex: 1,
-    fontSize: 14,
-    color: '#666',
-    lineHeight: 20,
-  },
-  termsLink: {
-    color: colors.primary,
-    fontWeight: '500',
-  },
+  inputIcon: { marginRight: 10 },
+  input: { flex: 1, paddingVertical: 12, fontSize: 16, color: '#000' },
+  termsContainer: { flexDirection: 'row', alignItems: 'center', marginBottom: 25, gap: 10 },
+  termsText: { fontSize: 13, color: '#666' },
   registerButton: {
-    backgroundColor: colors.primary,
-    borderRadius: 12,
-    paddingVertical: 16,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 24,
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
+    backgroundColor: '#000',
+    borderRadius: 12, paddingVertical: 15, flexDirection: 'row',
+    justifyContent: 'center', alignItems: 'center', gap: 10,
+    elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2, shadowRadius: 5
   },
-  registerButtonDisabled: {
-    backgroundColor: '#ccc',
-    shadowOpacity: 0,
-  },
-  registerButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-    marginRight: 8,
-  },
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#eee',
-  },
-  dividerText: {
-    marginHorizontal: 16,
-    color: '#999',
-    fontSize: 14,
-  },
-  socialButtons: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 16,
-    marginBottom: 32,
-  },
-  socialButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 12,
-    paddingVertical: 14,
-    gap: 8,
-  },
-  socialButtonText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#333',
-  },
-  loginContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loginText: {
-    fontSize: 14,
-    color: '#666',
-  },
-  loginLink: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.primary,
-  },
+  registerButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  loginContainer: { flexDirection: 'row', justifyContent: 'center', marginTop: 25 },
+  loginLink: { color: '#000', fontWeight: 'bold' }
 });
 
 export default Register;

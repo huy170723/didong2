@@ -1,10 +1,9 @@
 import React from 'react';
 import {
-    StyleSheet,
-    View,
-    ViewStyle,
+  StyleSheet,
+  View,
+  ViewStyle,
 } from 'react-native';
-import { colors } from '../../constants/colors';
 
 interface CardProps {
   children: React.ReactNode;
@@ -26,9 +25,9 @@ export default function Card({ children, style, elevation = 2 }: CardProps) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: colors.white,
+    backgroundColor: '#ffffff',
     borderRadius: 12,
-    shadowColor: colors.black,
+    shadowColor: '#000000',
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: 4,
   },

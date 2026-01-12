@@ -24,6 +24,7 @@ export interface User {
   phone?: string;
   avatar?: string;
   createdAt: Date;
+  address?: string;
 }
 
 export interface Favorite {

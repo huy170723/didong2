@@ -1,21 +1,22 @@
 import { db } from '@/app/config/firebase';
 import {
-    addDoc,
     collection,
     deleteDoc,
     doc,
     getDoc,
     getDocs,
     query,
+    serverTimestamp // Dùng cái này tốt hơn new Date() cho DB
+    ,
+    setDoc,
     where
 } from 'firebase/firestore';
 import { Car } from '../../types/firebase';
 
 export const favoriteService = {
-    // Lấy danh sách yêu thích
+    // 1. Lấy danh sách yêu thích (Đã tối ưu hiệu năng)
     getUserFavorites: async (userId: string): Promise<Car[]> => {
         try {
-            // Lấy favorite documents
             const q = query(
                 collection(db, 'favorites'),
                 where('userId', '==', userId)
@@ -24,81 +25,63 @@ export const favoriteService = {
             const querySnapshot = await getDocs(q);
             const carIds = querySnapshot.docs.map(doc => doc.data().carId);
 
-            // Lấy thông tin chi tiết xe
-            const cars: Car[] = [];
-            for (const carId of carIds) {
+            if (carIds.length === 0) return [];
+
+            // Tối ưu: Chạy tất cả các request getDoc cùng một lúc (song song)
+            const carPromises = carIds.map(async (carId) => {
                 const carDoc = await getDoc(doc(db, 'cars', carId));
                 if (carDoc.exists()) {
-                    cars.push({ id: carDoc.id, ...carDoc.data() } as Car);
+                    return { id: carDoc.id, ...carDoc.data() } as Car;
                 }
-            }
+                return null;
+            });
 
-            return cars;
+            const results = await Promise.all(carPromises);
+
+            // Lọc bỏ những xe có thể đã bị xóa khỏi hệ thống (null)
+            return results.filter((car): car is Car => car !== null);
         } catch (error) {
             console.error('Error getting favorites:', error);
             throw error;
         }
     },
 
-    // Thêm vào yêu thích
-    addFavorite: async (userId: string, carId: string): Promise<string> => {
+    // 2. Thêm vào yêu thích (Dùng setDoc với ID tự định nghĩa để tránh trùng lặp)
+    addFavorite: async (userId: string, carId: string): Promise<void> => {
         try {
-            // Kiểm tra đã có chưa
-            const q = query(
-                collection(db, 'favorites'),
-                where('userId', '==', userId),
-                where('carId', '==', carId)
-            );
-            const existing = await getDocs(q);
+            // Thay vì dùng addDoc (tạo ID ngẫu nhiên), ta dùng ID = userId_carId
+            // Cách này giúp Firebase tự chặn trùng lặp mà không cần query kiểm tra trước
+            const favoriteId = `${userId}_${carId}`;
+            const favoriteRef = doc(db, 'favorites', favoriteId);
 
-            if (!existing.empty) {
-                throw new Error('Car already in favorites');
-            }
-
-            // Thêm mới
-            const docRef = await addDoc(collection(db, 'favorites'), {
+            await setDoc(favoriteRef, {
                 userId,
                 carId,
-                createdAt: new Date()
+                createdAt: serverTimestamp() // Thời gian chuẩn server
             });
-
-            return docRef.id;
         } catch (error) {
             console.error('Error adding favorite:', error);
             throw error;
         }
     },
 
-    // Xóa khỏi yêu thích
+    // 3. Xóa khỏi yêu thích (Nhanh hơn vì có ID xác định)
     removeFavorite: async (userId: string, carId: string): Promise<void> => {
         try {
-            const q = query(
-                collection(db, 'favorites'),
-                where('userId', '==', userId),
-                where('carId', '==', carId)
-            );
-
-            const querySnapshot = await getDocs(q);
-            if (!querySnapshot.empty) {
-                await deleteDoc(doc(db, 'favorites', querySnapshot.docs[0].id));
-            }
+            const favoriteId = `${userId}_${carId}`;
+            await deleteDoc(doc(db, 'favorites', favoriteId));
         } catch (error) {
             console.error('Error removing favorite:', error);
             throw error;
         }
     },
 
-    // Kiểm tra có trong yêu thích không
+    // 4. Kiểm tra có trong yêu thích không
     isFavorite: async (userId: string, carId: string): Promise<boolean> => {
         try {
-            const q = query(
-                collection(db, 'favorites'),
-                where('userId', '==', userId),
-                where('carId', '==', carId)
-            );
-
-            const querySnapshot = await getDocs(q);
-            return !querySnapshot.empty;
+            const favoriteId = `${userId}_${carId}`;
+            const docSnap = await getDoc(doc(db, 'favorites', favoriteId));
+            return docSnap.exists();
         } catch (error) {
             console.error('Error checking favorite:', error);
             return false;

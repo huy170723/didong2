@@ -19,12 +19,12 @@ export const authService = {
   login: async (email: string, password: string): Promise<AuthResponse> => {
     try {
       console.log('[Auth] Đang đăng nhập với email:', email);
-      
-      const response = await api.post(API_ENDPOINTS.LOGIN, {
+
+      const response = await api.post(API_ENDPOINTS.AUTH.LOGIN, {
         email,
         password,
       });
-      
+
       console.log('[Auth] Đăng nhập thành công');
       return response.data;
     } catch (error: any) {
@@ -36,9 +36,9 @@ export const authService = {
   register: async (data: RegisterData): Promise<AuthResponse> => {
     try {
       console.log('[Auth] Đang đăng ký với email:', data.email);
-      
-      const response = await api.post(API_ENDPOINTS.REGISTER, data);
-      
+
+      const response = await api.post(API_ENDPOINTS.AUTH.REGISTER, data);
+
       console.log('[Auth] Đăng ký thành công');
       return response.data;
     } catch (error: any) {
@@ -49,7 +49,7 @@ export const authService = {
 
   logout: async (): Promise<{ success: boolean; message: string }> => {
     try {
-      const response = await api.post(API_ENDPOINTS.LOGOUT);
+      const response = await api.post(API_ENDPOINTS.AUTH.LOGOUT);
       return response.data;
     } catch (error) {
       console.error('[Auth] Lỗi đăng xuất:', error);

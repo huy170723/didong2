@@ -1,163 +1,129 @@
-import { router } from 'expo-router';
-import { Heart, HeartOff } from 'lucide-react-native';
-import React, { useEffect, useState } from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { ArrowRight, Heart, HeartOff } from 'lucide-react-native';
+import React, { useCallback, useState } from 'react';
 import {
   Alert,
   FlatList,
   RefreshControl,
   SafeAreaView,
+  StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from 'react-native';
 import CarCard from '../../components/car/CarCard';
 import Loading from '../../components/ui/Loading';
-import { colors } from '../../constants/colors';
 import { useAuth } from '../../contexts/AuthContext';
 import { favoriteService } from '../../services/firebase/favoriteService';
 import { Car } from '../../types/firebase';
 
-// Interface Favorite (nếu chưa có trong types)
-interface Favorite {
-  id: string;
-  userId: string;
-  carId: string;
-  carData?: Car;
-  createdAt: Date;
-}
-
 export default function FavoritesScreen() {
   const { user } = useAuth();
-  const [favorites, setFavorites] = useState<Car[]>([]); // Chỉ lưu Car, không cần Favorite object
+  const router = useRouter();
+  const [favorites, setFavorites] = useState<Car[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Load favorites từ Firebase
-  const loadFavorites = async () => {
-    if (!user?.id) {
-      setFavorites([]);
+  const loadFavorites = async (showLoading = true) => {
+    if (!user?.uid) {
       setLoading(false);
       return;
     }
-
-    setLoading(true);
+    if (showLoading) setLoading(true);
     try {
-      const userFavorites = await favoriteService.getUserFavorites(user.id);
-      setFavorites(userFavorites);
-    } catch (error: any) {
-      console.error('Error loading favorites:', error);
+      const data = await favoriteService.getUserFavorites(user.uid);
+      setFavorites(data);
+    } catch (error) {
       Alert.alert('Lỗi', 'Không thể tải danh sách yêu thích');
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
-  useEffect(() => {
-    loadFavorites();
-  }, [user]);
+  useFocusEffect(
+    useCallback(() => {
+      loadFavorites();
+    }, [user])
+  );
 
-  const onRefresh = async () => {
+  const onRefresh = () => {
     setRefreshing(true);
-    await loadFavorites();
-    setRefreshing(false);
+    loadFavorites(false);
   };
 
-  const handleRemoveFavorite = async (carId: string, carName: string) => {
-    if (!user?.id) return;
-
-    Alert.alert(
-      'Xác nhận',
-      `Bạn có chắc chắn muốn xóa "${carName}" khỏi danh sách yêu thích?`,
-      [
-        { text: 'Hủy', style: 'cancel' },
-        {
-          text: 'Xóa',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await favoriteService.removeFavorite(user.id, carId);
-              // Cập nhật state
-              setFavorites(prev => prev.filter(car => car.id !== carId));
-              Alert.alert('Thành công', 'Đã xóa khỏi yêu thích');
-            } catch (error: any) {
-              console.error('Error removing favorite:', error);
-              Alert.alert('Lỗi', 'Không thể xóa khỏi yêu thích');
-            }
-          },
-        },
-      ]
-    );
+  const handleRemove = async (carId: string, carName: string) => {
+    if (!user?.uid) return;
+    Alert.alert('Thông báo', `Bỏ "${carName}" khỏi danh sách yêu thích?`, [
+      { text: 'Hủy', style: 'cancel' },
+      {
+        text: 'Đồng ý',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await favoriteService.removeFavorite(user.uid, carId);
+            setFavorites(prev => prev.filter(c => c.id !== carId));
+          } catch (error) {
+            Alert.alert('Lỗi', 'Không thể xóa xe khỏi danh sách');
+          }
+        }
+      }
+    ]);
   };
 
-  if (loading) {
-    return <Loading />;
-  }
-
-  if (!user) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.authContainer}>
-          <Heart size={64} color={colors.gray} />
-          <Text style={styles.authTitle}>Vui lòng đăng nhập</Text>
-          <Text style={styles.authText}>
-            Đăng nhập để xem danh sách yêu thích của bạn
-          </Text>
-          <TouchableOpacity
-            style={styles.authButton}
-            onPress={() => router.push('/(auth)/login')}
-          >
-            <Text style={styles.authButtonText}>Đăng nhập</Text>
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
-    );
-  }
+  if (loading) return <Loading />;
 
   return (
     <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+
+      {/* HEADER: Chữ đen in đậm, nền trắng */}
       <View style={styles.header}>
-        <Text style={styles.title}>Xe yêu thích</Text>
-        <Text style={styles.subtitle}>
-          {favorites.length} xe trong danh sách
-        </Text>
+        <Text style={styles.title}>Bộ sưu tập</Text>
+        <Text style={styles.subtitle}>{favorites.length} xe đã lưu</Text>
       </View>
 
       <FlatList
         data={favorites}
-        renderItem={({ item }) => (
-          <View style={styles.carItem}>
-            <CarCard car={item} />
-            <TouchableOpacity
-              style={styles.removeButton}
-              onPress={() => handleRemoveFavorite(item.id, item.name)}
-            >
-              <HeartOff size={20} color={colors.danger} />
-              <Text style={styles.removeText}>Bỏ thích</Text>
-            </TouchableOpacity>
-          </View>
-        )}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
+        showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={[colors.primary]}
+            tintColor="#000000" // Màu xoay cho iOS
+            colors={["#000000"]} // Màu xoay cho Android
           />
         }
+        renderItem={({ item }) => (
+          <View style={styles.cardWrapper}>
+            <CarCard car={item} />
+            <TouchableOpacity
+              style={styles.removeAction}
+              onPress={() => handleRemove(item.id, item.name)}
+            >
+              <HeartOff size={16} color="#000000" />
+              <Text style={styles.removeText}>Xóa khỏi yêu thích</Text>
+            </TouchableOpacity>
+          </View>
+        )}
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Heart size={64} color={colors.gray} />
+            <View style={styles.emptyIconCircle}>
+              <Heart size={40} color="#000000" />
+            </View>
             <Text style={styles.emptyTitle}>Chưa có xe yêu thích</Text>
-            <Text style={styles.emptyText}>
-              Thêm xe vào danh sách yêu thích để xem lại sau
+            <Text style={styles.emptySubtitle}>
+              Hãy khám phá và lưu lại những mẫu xe bạn ưng ý nhất.
             </Text>
             <TouchableOpacity
-              style={styles.browseButton}
               onPress={() => router.push('/(tabs)')}
+              style={styles.goBtn}
             >
-              <Text style={styles.browseButtonText}>Duyệt xe</Text>
+              <Text style={styles.goBtnText}>Khám phá ngay</Text>
+              <ArrowRight size={18} color="#FFFFFF" />
             </TouchableOpacity>
           </View>
         }
@@ -169,114 +135,96 @@ export default function FavoritesScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: '#FFFFFF'
   },
   header: {
-    padding: 16,
-    backgroundColor: colors.white,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 15,
   },
   title: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
-    color: colors.text,
+    color: '#000000'
   },
   subtitle: {
     fontSize: 14,
-    color: colors.textLight,
+    color: '#888888',
     marginTop: 4,
+    fontWeight: '500'
   },
   list: {
-    padding: 16,
+    paddingHorizontal: 20,
+    paddingBottom: 40
   },
-  carItem: {
-    marginBottom: 16,
-    backgroundColor: colors.white,
-    borderRadius: 12,
+  cardWrapper: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    marginBottom: 25,
+    borderWidth: 1,
+    borderColor: '#F0F0F0',
     overflow: 'hidden',
+    // Đổ bóng nhẹ
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  removeButton: {
+  removeAction: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 12,
+    paddingVertical: 14,
+    backgroundColor: '#FAFAFA',
     borderTopWidth: 1,
-    borderTopColor: colors.border,
-    backgroundColor: colors.lightGray,
+    borderTopColor: '#EEEEEE'
   },
   removeText: {
     marginLeft: 8,
-    color: colors.danger,
-    fontWeight: '500',
+    color: '#000000',
+    fontWeight: '600',
+    fontSize: 13
   },
   empty: {
     alignItems: 'center',
+    marginTop: 100,
+    paddingHorizontal: 40
+  },
+  emptyIconCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#F5F5F5',
     justifyContent: 'center',
-    padding: 40,
+    alignItems: 'center',
+    marginBottom: 20
   },
   emptyTitle: {
     fontSize: 18,
-    fontWeight: '600',
-    color: colors.text,
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  emptyText: {
-    fontSize: 14,
-    color: colors.textLight,
-    textAlign: 'center',
-    marginBottom: 24,
-  },
-  browseButton: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
-  },
-  browseButtonText: {
-    color: colors.white,
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  authContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 40,
-  },
-  authTitle: {
-    fontSize: 20,
     fontWeight: 'bold',
-    color: colors.text,
-    marginTop: 16,
-    marginBottom: 8,
+    color: '#000000'
   },
-  authText: {
+  emptySubtitle: {
     fontSize: 14,
-    color: colors.textLight,
+    color: '#666666',
     textAlign: 'center',
-    marginBottom: 24,
+    marginTop: 8,
+    lineHeight: 20
   },
-  authButton: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: 32,
+  goBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#000000',
+    paddingHorizontal: 25,
     paddingVertical: 14,
-    borderRadius: 8,
+    borderRadius: 30,
+    marginTop: 25,
+    gap: 8
   },
-  authButtonText: {
-    color: colors.white,
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  errorCard: {
-    padding: 16,
-    backgroundColor: colors.lightGray,
-    borderRadius: 8,
-    marginBottom: 16,
-  },
-  errorText: {
-    color: colors.danger,
-    textAlign: 'center',
-  },
+  goBtnText: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+    fontSize: 15
+  }
 });

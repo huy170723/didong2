@@ -1,64 +1,65 @@
+import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
-import { Heart, Home, Search, ShoppingBag, User } from 'lucide-react-native';
-import { colors } from '../../constants/colors';
+import React from "react";
 
-export default function TabLayout() {
-  return (
-    <Tabs
-      screenOptions={{
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.gray,
-        tabBarStyle: {
-          backgroundColor: colors.white,
-          borderTopColor: colors.border,
-        },
-        headerShown: false,
-      }}>
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Trang chủ',
-          tabBarIcon: ({ color, size }) => (
-            <Home size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="search"
-        options={{
-          title: 'Tìm kiếm',
-          tabBarIcon: ({ color, size }) => (
-            <Search size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="favorites"
-        options={{
-          title: 'Yêu thích',
-          tabBarIcon: ({ color, size }) => (
-            <Heart size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="orders"
-        options={{
-          title: 'Đơn hàng',
-          tabBarIcon: ({ color, size }) => (
-            <ShoppingBag size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: 'Tài khoản',
-          tabBarIcon: ({ color, size }) => (
-            <User size={size} color={color} />
-          ),
-        }}
-      />
-    </Tabs>
-  );
+export default function TabsLayout() {
+    return (
+        <Tabs
+            screenOptions={{
+                headerShown: false,
+                tabBarActiveTintColor: '#007AFF',
+            }}
+        >
+            <Tabs.Screen
+                name="index"
+                options={{
+                    title: 'Trang chủ',
+                    tabBarIcon: ({ color, size }) => (
+                        <Ionicons name="home" size={size} color={color} />
+                    ),
+                }}
+            />
+
+
+            <Tabs.Screen
+                name="Search"
+                options={{
+                    title: 'Tìm kiếm',
+                    tabBarIcon: ({ color, size }) => (
+                        <Ionicons name="search" size={size} color={color} />
+                    ),
+                }}
+            />
+
+            <Tabs.Screen
+                name="Orders"
+                options={{
+                    title: 'Đơn hàng',
+                    tabBarIcon: ({ color, size }) => (
+                        <Ionicons name="receipt" size={size} color={color} />
+                    ),
+                }}
+            />
+
+            <Tabs.Screen
+                name="Favorite"
+                options={{
+                    title: 'Yêu thích',
+                    tabBarIcon: ({ color, size }) => (
+                        <Ionicons name="heart" size={size} color={color} />
+                    ),
+                }}
+            />
+
+            <Tabs.Screen
+                name="Profile"
+                options={{
+                    title: 'Tài khoản',
+                    tabBarIcon: ({ color, size }) => (
+                        <Ionicons name="person" size={size} color={color} />
+                    ),
+                }}
+            />
+        </Tabs>
+    );
 }

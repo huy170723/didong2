@@ -1,4 +1,5 @@
 import { styles } from '@/components/car/styles';
+import { useRouter } from 'expo-router'; // 1. Thêm import này
 import { Calendar, Fuel, Gauge, Heart } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import { Alert, Image, Text, TouchableOpacity, View } from 'react-native';
@@ -13,35 +14,33 @@ interface CarCardProps {
 
 export default function CarCard({ car, onPress }: CarCardProps) {
   const { user } = useAuth();
+  const router = useRouter(); // 2. Khởi tạo router
   const [isFavorite, setIsFavorite] = useState(false);
   const [loadingFavorite, setLoadingFavorite] = useState(false);
 
-  // Check if car is favorite
+  // Check if car is favorite (giữ nguyên logic của bạn)
   useEffect(() => {
     const checkFavorite = async () => {
-      if (user?.id) {
-        const favorite = await favoriteService.isFavorite(user.id, car.id);
+      if (user?.uid) {
+        const favorite = await favoriteService.isFavorite(user.uid, car.id);
         setIsFavorite(favorite);
       }
     };
-
     checkFavorite();
   }, [user, car.id]);
 
-  // Toggle favorite
   const handleToggleFavorite = async () => {
-    if (!user?.id) {
+    if (!user?.uid) {
       Alert.alert('Vui lòng đăng nhập', 'Đăng nhập để thêm vào yêu thích');
       return;
     }
-
     setLoadingFavorite(true);
     try {
       if (isFavorite) {
-        await favoriteService.removeFavorite(user.id, car.id);
+        await favoriteService.removeFavorite(user.uid, car.id);
         setIsFavorite(false);
       } else {
-        await favoriteService.addFavorite(user.id, car.id);
+        await favoriteService.addFavorite(user.uid, car.id);
         setIsFavorite(true);
       }
     } catch (error: any) {
@@ -51,13 +50,26 @@ export default function CarCard({ car, onPress }: CarCardProps) {
     }
   };
 
-  // Format price
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('vi-VN').format(price) + '₫';
   };
 
+  // 3. Hàm xử lý khi nhấn vào thẻ xe
+  const handlePress = () => {
+    if (onPress) {
+      onPress(); // Nếu có truyền onPress từ ngoài vào thì chạy
+    } else {
+      // Mặc định chuyển sang trang chi tiết dựa trên car.id
+      router.push(`/car-detail/${car.id}`);
+    }
+  };
+
   return (
-    <TouchableOpacity style={styles.container} onPress={onPress} activeOpacity={0.8}>
+    <TouchableOpacity
+      style={styles.container}
+      onPress={handlePress} // 4. Sử dụng hàm handlePress
+      activeOpacity={0.8}
+    >
       <Image source={{ uri: car.image_url }} style={styles.image} />
 
       <View style={styles.content}>
@@ -85,7 +97,9 @@ export default function CarCard({ car, onPress }: CarCardProps) {
 
           <View style={styles.detailItem}>
             <Gauge size={16} color="#666" />
-            <Text style={styles.detailText}>{car.mileage.toLocaleString()} km</Text>
+            <Text style={styles.detailText}>
+              {typeof car.mileage === 'number' ? car.mileage.toLocaleString() : car.mileage} km
+            </Text>
           </View>
 
           <View style={styles.detailItem}>

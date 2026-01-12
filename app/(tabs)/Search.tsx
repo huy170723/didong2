@@ -4,6 +4,7 @@ import {
   ActivityIndicator,
   FlatList,
   SafeAreaView,
+  StatusBar,
   StyleSheet,
   Text,
   TextInput,
@@ -11,7 +12,6 @@ import {
   View
 } from 'react-native';
 import CarCard from '../../components/car/CarCard';
-import { colors } from '../../constants/colors';
 import { carService } from '../../services/firebase/carService';
 import { Car } from '../../types/firebase';
 
@@ -24,20 +24,16 @@ export default function SearchScreen() {
 
   const handleSearch = async (text: string) => {
     setSearchText(text);
-    setSearchPerformed(false);
-
     if (text.trim().length === 0) {
       setSearchResults([]);
+      setSearchPerformed(false);
       return;
     }
-
     try {
       setLoading(true);
       const results = await carService.searchCars(text);
       setSearchResults(results);
       setSearchPerformed(true);
-
-      // Add to recent searches (nếu chưa có)
       if (text.trim() !== '' && !recentSearches.includes(text)) {
         setRecentSearches(prev => [text, ...prev.slice(0, 4)]);
       }
@@ -50,9 +46,7 @@ export default function SearchScreen() {
   };
 
   const handleSearchSubmit = () => {
-    if (searchText.trim() !== '') {
-      handleSearch(searchText.trim());
-    }
+    if (searchText.trim() !== '') handleSearch(searchText.trim());
   };
 
   const clearSearch = () => {
@@ -66,44 +60,49 @@ export default function SearchScreen() {
     handleSearch(search);
   };
 
-  const clearRecentSearches = () => {
-    setRecentSearches([]);
-  };
+  const clearRecentSearches = () => setRecentSearches([]);
 
   return (
     <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+
+      {/* HEADER: Đen Trắng thuần túy */}
       <View style={styles.header}>
-        <Text style={styles.title}>Tìm kiếm xe</Text>
+        <Text style={styles.title}>Tìm kiếm</Text>
       </View>
 
+      {/* SEARCH BAR: Viền đen mảnh hoặc nền xám cực nhạt */}
       <View style={styles.searchContainer}>
         <View style={styles.searchInputContainer}>
-          <SearchIcon size={20} color={colors.gray} style={styles.searchIcon} />
+          <SearchIcon size={20} color="#000000" style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Tìm kiếm theo tên, hãng, model..."
-            placeholderTextColor={colors.gray}
+            placeholder="Bạn đang tìm xe gì?"
+            placeholderTextColor="#888"
             value={searchText}
-            onChangeText={setSearchText}
+            onChangeText={(text) => {
+              setSearchText(text);
+              if (text === '') clearSearch();
+            }}
             onSubmitEditing={handleSearchSubmit}
             returnKeyType="search"
-            autoFocus
           />
           {searchText.length > 0 && (
             <TouchableOpacity onPress={clearSearch} style={styles.clearButton}>
-              <X size={20} color={colors.gray} />
+              <X size={18} color="#000000" />
             </TouchableOpacity>
           )}
         </View>
       </View>
 
+      {/* CONTENT */}
       {searchText.length === 0 && !searchPerformed ? (
         <View style={styles.recentContainer}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Tìm kiếm gần đây</Text>
+            <Text style={styles.sectionTitle}>TÌM KIẾM GẦN ĐÂY</Text>
             {recentSearches.length > 0 && (
               <TouchableOpacity onPress={clearRecentSearches}>
-                <Text style={styles.clearRecentText}>Xóa</Text>
+                <Text style={styles.clearRecentText}>Xóa tất cả</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -122,7 +121,7 @@ export default function SearchScreen() {
             </View>
           ) : (
             <View style={styles.noRecent}>
-              <Text style={styles.noRecentText}>Chưa có tìm kiếm gần đây</Text>
+              <Text style={styles.noRecentText}>Lịch sử tìm kiếm trống</Text>
             </View>
           )}
         </View>
@@ -132,17 +131,19 @@ export default function SearchScreen() {
           renderItem={({ item }) => <CarCard car={item} />}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.resultsList}
+          showsVerticalScrollIndicator={false}
           ListEmptyComponent={
             loading ? (
               <View style={styles.empty}>
-                <ActivityIndicator size="large" color={colors.primary} />
-                <Text style={styles.emptyText}>Đang tìm kiếm...</Text>
+                <ActivityIndicator size="small" color="#000000" />
+                <Text style={styles.emptyText}>Đang lấy dữ liệu...</Text>
               </View>
             ) : searchPerformed ? (
               <View style={styles.empty}>
-                <SearchIcon size={48} color={colors.gray} />
+                <SearchIcon size={40} color="#000000" />
+                <Text style={styles.emptyTitle}>Không tìm thấy kết quả</Text>
                 <Text style={styles.emptyText}>
-                  Không tìm thấy xe phù hợp với "{searchText}"
+                  Thử tìm kiếm với tên hãng hoặc dòng xe khác
                 </Text>
               </View>
             ) : null
@@ -156,98 +157,113 @@ export default function SearchScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: '#FFFFFF'
   },
   header: {
-    padding: 16,
-    backgroundColor: colors.white,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 10,
   },
   title: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
-    color: colors.text,
+    color: '#000000'
   },
   searchContainer: {
-    padding: 16,
-    backgroundColor: colors.white,
+    paddingHorizontal: 20,
+    paddingVertical: 15
   },
   searchInputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.lightGray,
     borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 15,
+    height: 55,
+    backgroundColor: '#F5F5F5', // Xám cực nhạt để phân biệt với nền trắng
+    borderWidth: 1,
+    borderColor: '#EEEEEE'
   },
   searchIcon: {
-    marginRight: 12,
+    marginRight: 10
   },
   searchInput: {
     flex: 1,
     fontSize: 16,
-    color: colors.text,
+    color: '#000000',
+    fontWeight: '500'
   },
   clearButton: {
-    padding: 4,
+    padding: 5
   },
   recentContainer: {
-    padding: 16,
+    paddingHorizontal: 20,
+    paddingTop: 10
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 20,
   },
   sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.text,
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#888888',
+    letterSpacing: 1
   },
   clearRecentText: {
-    fontSize: 14,
-    color: colors.primary,
-    fontWeight: '500',
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#000000',
+    textDecorationLine: 'underline'
   },
   recentList: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: 10
   },
   recentItem: {
-    backgroundColor: colors.white,
-    paddingHorizontal: 16,
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 18,
     paddingVertical: 10,
-    borderRadius: 20,
+    borderRadius: 10,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: '#000000', // Viền đen phong cách Minimalist
   },
   recentText: {
-    color: colors.text,
     fontSize: 14,
+    fontWeight: '600',
+    color: '#000000'
   },
   noRecent: {
-    padding: 20,
-    alignItems: 'center',
+    paddingVertical: 30,
+    alignItems: 'center'
   },
   noRecentText: {
     fontSize: 14,
-    color: colors.gray,
+    color: '#999'
   },
   resultsList: {
-    padding: 16,
+    padding: 20,
+    paddingBottom: 40
   },
   empty: {
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 40,
+    marginTop: 100,
+    paddingHorizontal: 40
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#000000',
+    marginTop: 20,
+    marginBottom: 8
   },
   emptyText: {
-    fontSize: 16,
-    color: colors.gray,
-    marginTop: 16,
+    fontSize: 14,
+    color: '#666',
     textAlign: 'center',
+    lineHeight: 20
   },
 });

@@ -1,326 +1,221 @@
 import { router } from 'expo-router';
 import {
-  Heart, HelpCircle,
+  ChevronRight,
+  Heart,
   LogOut,
   Mail,
   MapPin,
   Phone,
   Settings,
-  Shield,
   ShoppingBag,
-  User
+  User as UserIcon
 } from 'lucide-react-native';
+import React from "react";
 import {
-  Alert,
+  ActivityIndicator,
   SafeAreaView,
   ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from 'react-native';
-import { colors } from '../../constants/colors';
 import { useAuth } from '../../contexts/AuthContext';
+import { User } from '../../types/firebase';
+
+type UserWithAddress = User & { address?: string };
 
 export default function ProfileScreen() {
-  const { user, logout } = useAuth();
+  const { user, logout, loading } = useAuth();
 
-  const handleLogout = () => {
-    Alert.alert(
-      'Xác nhận',
-      'Bạn có chắc chắn muốn đăng xuất?',
-      [
-        { text: 'Hủy', style: 'cancel' },
-        {
-          text: 'Đăng xuất',
-          style: 'destructive',
-          onPress: async () => {
-            await logout();
-            router.replace('/(auth)/login');
-          },
-        },
-      ]
+  // ⏳ TRẠNG THÁI ĐANG TẢI
+  if (loading) {
+    return (
+      <SafeAreaView style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="small" color="#000000" />
+      </SafeAreaView>
     );
-  };
+  }
 
+  // ❌ CHƯA ĐĂNG NHẬP
   if (!user) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.authContainer}>
-          <User size={64} color={colors.gray} />
-          <Text style={styles.authTitle}>Vui lòng đăng nhập</Text>
-          <Text style={styles.authText}>
-            Đăng nhập để xem thông tin tài khoản
-          </Text>
-          <TouchableOpacity 
+          <View style={styles.emptyIconCircle}>
+            <UserIcon size={40} color="#000000" />
+          </View>
+          <Text style={styles.authTitle}>Tài khoản</Text>
+          <Text style={styles.authText}>Đăng nhập để quản lý bộ sưu tập xe và các đơn đặt hàng của bạn</Text>
+          <TouchableOpacity
             style={styles.authButton}
             onPress={() => router.push('/(auth)/login')}
           >
-            <Text style={styles.authButtonText}>Đăng nhập</Text>
+            <Text style={styles.authButtonText}>Đăng nhập ngay</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
     );
   }
 
+  const currentUser = (user as unknown) as UserWithAddress;
+
+  const handleLogout = async () => {
+    await logout();
+    router.replace('/(auth)/login');
+  };
+
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView>
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+      <ScrollView showsVerticalScrollIndicator={false}>
+
+        {/* HEADER - PROFILE INFO */}
         <View style={styles.header}>
           <View style={styles.profileHeader}>
             <View style={styles.avatar}>
               <Text style={styles.avatarText}>
-                {user.name.charAt(0).toUpperCase()}
+                {currentUser.name?.charAt(0)?.toUpperCase() || 'U'}
               </Text>
             </View>
             <View style={styles.profileInfo}>
-              <Text style={styles.name}>{user.name}</Text>
-              <Text style={styles.email}>{user.email}</Text>
+              <Text style={styles.name}>{currentUser.name}</Text>
+              <Text style={styles.email}>{currentUser.email}</Text>
             </View>
           </View>
         </View>
 
+        {/* THÔNG TIN CHI TIẾT */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Thông tin cá nhân</Text>
           <View style={styles.infoCard}>
-            <View style={styles.infoItem}>
-              <Mail size={20} color={colors.gray} />
-              <Text style={styles.infoLabel}>Email</Text>
-              <Text style={styles.infoValue}>{user.email}</Text>
-            </View>
-            {user.phone && (
-              <View style={styles.infoItem}>
-                <Phone size={20} color={colors.gray} />
-                <Text style={styles.infoLabel}>Số điện thoại</Text>
-                <Text style={styles.infoValue}>{user.phone}</Text>
-              </View>
-            )}
-            {user.address && (
-              <View style={styles.infoItem}>
-                <MapPin size={20} color={colors.gray} />
-                <Text style={styles.infoLabel}>Địa chỉ</Text>
-                <Text style={styles.infoValue}>{user.address}</Text>
-              </View>
-            )}
+            <InfoRow icon={<Mail size={18} color="#000" />} label="Email" value={currentUser.email} />
+            <View style={styles.divider} />
+            <InfoRow icon={<Phone size={18} color="#000" />} label="Điện thoại" value={currentUser.phone || 'Chưa cập nhật'} />
+            <View style={styles.divider} />
+            <InfoRow icon={<MapPin size={18} color="#000" />} label="Địa chỉ" value={currentUser.address || 'Chưa cập nhật'} />
           </View>
         </View>
 
+        {/* DANH MỤC QUẢN LÝ */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Tài khoản</Text>
           <View style={styles.menuCard}>
-            <TouchableOpacity 
-              style={styles.menuItem}
-              onPress={() => Alert.alert('Thông báo', 'Chức năng đang phát triển')}
-            >
-              <ShoppingBag size={20} color={colors.primary} />
-              <Text style={styles.menuText}>Đơn hàng của tôi</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={styles.menuItem}
-              onPress={() => router.push('/(tabs)/favorites')}
-            >
-              <Heart size={20} color={colors.primary} />
-              <Text style={styles.menuText}>Xe yêu thích</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={styles.menuItem}
-              onPress={() => Alert.alert('Thông báo', 'Chức năng đang phát triển')}
-            >
-              <Settings size={20} color={colors.primary} />
-              <Text style={styles.menuText}>Cài đặt</Text>
-            </TouchableOpacity>
+            <MenuLink
+              icon={<ShoppingBag size={20} color="#000" />}
+              label="Đơn hàng của tôi"
+              onPress={() => router.push('/Orders' as any)}
+            />
+            <MenuLink
+              icon={<Heart size={20} color="#000" />}
+              label="Xe yêu thích"
+              onPress={() => router.push('/Favorite' as any)}
+            />
+            <MenuLink
+              icon={<Settings size={20} color="#000" />}
+              label="Cài đặt"
+              onPress={() => { }}
+              isLast
+            />
           </View>
         </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Hỗ trợ</Text>
-          <View style={styles.menuCard}>
-            <TouchableOpacity 
-              style={styles.menuItem}
-              onPress={() => Alert.alert('Thông báo', 'Chức năng đang phát triển')}
-            >
-              <HelpCircle size={20} color={colors.primary} />
-              <Text style={styles.menuText}>Trung tâm hỗ trợ</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={styles.menuItem}
-              onPress={() => Alert.alert('Thông báo', 'Chức năng đang phát triển')}
-            >
-              <Shield size={20} color={colors.primary} />
-              <Text style={styles.menuText}>Chính sách bảo mật</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        <TouchableOpacity 
-          style={styles.logoutButton}
-          onPress={handleLogout}
-        >
-          <LogOut size={20} color={colors.danger} />
+        {/* ĐĂNG XUẤT */}
+        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+          <LogOut size={20} color="#000000" />
           <Text style={styles.logoutText}>Đăng xuất</Text>
         </TouchableOpacity>
 
-        <View style={styles.footer}>
-          <Text style={styles.version}>Phiên bản 1.0.0</Text>
-          <Text style={styles.copyright}>© 2024 CarShop. All rights reserved.</Text>
-        </View>
+        <Text style={styles.versionText}>v1.0.0 (Premium)</Text>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
+// UI Components
+const InfoRow = ({ icon, label, value }: any) => (
+  <View style={styles.infoItem}>
+    <View style={styles.iconBox}>{icon}</View>
+    <View style={styles.infoTextWrapper}>
+      <Text style={styles.infoLabel}>{label}</Text>
+      <Text style={styles.infoValue} numberOfLines={1}>{value}</Text>
+    </View>
+  </View>
+);
+
+const MenuLink = ({ icon, label, onPress, isLast }: any) => (
+  <TouchableOpacity
+    style={[styles.menuItem, !isLast && styles.borderBottom]}
+    onPress={onPress}
+  >
+    <View style={styles.menuIconWrapper}>{icon}</View>
+    <Text style={styles.menuText}>{label}</Text>
+    <ChevronRight size={18} color="#CCCCCC" />
+  </TouchableOpacity>
+);
+
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  header: {
-    backgroundColor: colors.white,
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  profileHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
+  container: { flex: 1, backgroundColor: '#FFFFFF' },
+  header: { padding: 24, paddingTop: 20 },
+  profileHeader: { flexDirection: 'row', alignItems: 'center' },
   avatar: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    backgroundColor: colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
+    width: 70, height: 70, borderRadius: 35,
+    backgroundColor: '#000000',
+    justifyContent: 'center', alignItems: 'center', marginRight: 20,
   },
-  avatarText: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: colors.white,
-  },
-  profileInfo: {
-    flex: 1,
-  },
-  name: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: colors.text,
-    marginBottom: 4,
-  },
-  email: {
-    fontSize: 16,
-    color: colors.textLight,
-  },
-  section: {
-    padding: 16,
-  },
+  avatarText: { fontSize: 28, fontWeight: 'bold', color: '#FFFFFF' },
+  profileInfo: { flex: 1 },
+  name: { fontSize: 22, fontWeight: 'bold', color: '#000000' },
+  email: { fontSize: 14, color: '#888', marginTop: 4 },
+
+  section: { paddingHorizontal: 20, paddingTop: 30 },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: colors.text,
-    marginBottom: 12,
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#888888',
+    marginBottom: 15,
+    textTransform: 'uppercase',
+    letterSpacing: 1.5
   },
+
   infoCard: {
-    backgroundColor: colors.white,
-    borderRadius: 12,
-    padding: 16,
-  },
-  infoItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  infoLabel: {
-    flex: 1,
-    fontSize: 14,
-    color: colors.textLight,
-    marginLeft: 12,
-  },
-  infoValue: {
-    fontSize: 14,
-    color: colors.text,
-    fontWeight: '500',
-  },
-  menuCard: {
-    backgroundColor: colors.white,
-    borderRadius: 12,
-    overflow: 'hidden',
-  },
-  menuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  menuText: {
-    flex: 1,
-    fontSize: 16,
-    color: colors.text,
-    marginLeft: 12,
-  },
-  logoutButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.white,
-    marginHorizontal: 16,
-    marginVertical: 24,
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.danger,
-  },
-  logoutText: {
-    fontSize: 16,
-    color: colors.danger,
-    fontWeight: '600',
-    marginLeft: 8,
-  },
-  footer: {
-    alignItems: 'center',
+    backgroundColor: '#FAFAFA',
+    borderRadius: 16,
     padding: 20,
+    borderWidth: 1,
+    borderColor: '#F0F0F0'
   },
-  version: {
-    fontSize: 12,
-    color: colors.textLight,
-    marginBottom: 4,
+  infoItem: { flexDirection: 'row', alignItems: 'center' },
+  iconBox: { width: 35 },
+  infoTextWrapper: { flex: 1, marginLeft: 5 },
+  infoLabel: { fontSize: 12, color: '#888', marginBottom: 2 },
+  infoValue: { fontSize: 15, fontWeight: '600', color: '#000' },
+  divider: { height: 1, backgroundColor: '#EEEEEE', marginVertical: 15 },
+
+  menuCard: { backgroundColor: '#FFFFFF' },
+  menuItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 18 },
+  borderBottom: { borderBottomWidth: 1, borderBottomColor: '#F0F0F0' },
+  menuIconWrapper: { width: 40 },
+  menuText: { flex: 1, fontSize: 16, fontWeight: '500', color: '#000' },
+
+  logoutButton: {
+    flexDirection: 'row', justifyContent: 'center', alignItems: 'center',
+    marginHorizontal: 20, marginTop: 40, marginBottom: 20, padding: 18,
+    borderRadius: 16, borderWidth: 1, borderColor: '#000000'
   },
-  copyright: {
-    fontSize: 12,
-    color: colors.textLight,
+  logoutText: { marginLeft: 10, fontSize: 16, fontWeight: 'bold', color: '#000000' },
+
+  authContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 40 },
+  emptyIconCircle: {
+    width: 90, height: 90, borderRadius: 45,
+    backgroundColor: '#F5F5F5', justifyContent: 'center', alignItems: 'center', marginBottom: 25
   },
-  authContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 40,
-  },
-  authTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: colors.text,
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  authText: {
-    fontSize: 14,
-    color: colors.textLight,
-    textAlign: 'center',
-    marginBottom: 24,
-  },
+  authTitle: { fontSize: 28, fontWeight: 'bold', color: '#000' },
+  authText: { fontSize: 15, color: '#666', textAlign: 'center', marginTop: 12, marginBottom: 30, lineHeight: 22 },
   authButton: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: 32,
-    paddingVertical: 14,
-    borderRadius: 8,
+    backgroundColor: '#000000', paddingHorizontal: 40, paddingVertical: 15, borderRadius: 30
   },
-  authButtonText: {
-    color: colors.white,
-    fontSize: 16,
-    fontWeight: '600',
-  },
+  authButtonText: { color: '#FFFFFF', fontSize: 16, fontWeight: 'bold' },
+  versionText: { textAlign: 'center', color: '#BBB', marginVertical: 20, fontSize: 11, letterSpacing: 1 }
 });

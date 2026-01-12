@@ -44,6 +44,7 @@ export default function CarList({ filters, searchQuery }: CarListProps) {
                 setHasMore(false);
             } else if (filters && Object.keys(filters).length > 0) {
                 // Filter mode
+                // @ts-ignore
                 carData = await carService.filterCars(filters);
                 setHasMore(false);
             } else {
