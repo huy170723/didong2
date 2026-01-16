@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import React from "react";
+import { Platform } from 'react-native';
 
 export default function TabsLayout() {
     return (
@@ -8,10 +9,14 @@ export default function TabsLayout() {
             screenOptions={{
                 headerShown: false,
                 tabBarActiveTintColor: '#007AFF',
+                tabBarStyle: Platform.OS === 'web' ? {
+                    boxShadow: '0px -1px 5px rgba(0,0,0,0.1)', // Cách viết boxShadow chuẩn cho Web
+                    borderTopWidth: 0,
+                } : {},
             }}
         >
             <Tabs.Screen
-                name="index" // Giữ nguyên viết thường vì file là index.tsx
+                name="index"
                 options={{
                     title: 'Trang chủ',
                     tabBarIcon: ({ color, size }) => (
@@ -21,7 +26,7 @@ export default function TabsLayout() {
             />
 
             <Tabs.Screen
-                name="Search" // Đổi thành viết HOA vì file là Search.tsx
+                name="Search"
                 options={{
                     title: 'Tìm kiếm',
                     tabBarIcon: ({ color, size }) => (
@@ -31,17 +36,17 @@ export default function TabsLayout() {
             />
 
             <Tabs.Screen
-                name="CreatePost" // Giữ nguyên viết HOA vì file là CreatePost.tsx
+                name="Deposit"
                 options={{
-                    title: 'Đăng tin',
-                    tabBarIcon: ({ color }) => (
-                        <Ionicons name="add-circle-outline" size={28} color={color} />
+                    title: 'Đặt cọc',
+                    tabBarIcon: ({ color, size }) => (
+                        <Ionicons name="wallet-outline" size={size} color={color} />
                     ),
                 }}
             />
 
             <Tabs.Screen
-                name="Favorite" // Đổi thành viết HOA vì file là Favorite.tsx
+                name="Favorite"
                 options={{
                     title: 'Yêu thích',
                     tabBarIcon: ({ color, size }) => (
@@ -51,7 +56,7 @@ export default function TabsLayout() {
             />
 
             <Tabs.Screen
-                name="Profile" // Đổi thành viết HOA vì file là Profile.tsx
+                name="Profile"
                 options={{
                     title: 'Tài khoản',
                     tabBarIcon: ({ color, size }) => (

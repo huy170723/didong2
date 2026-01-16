@@ -8,6 +8,7 @@ export interface Car {
   mileage: number;
   fuel_type: string;
   transmission: string;
+  phone_number: string;
   color: string;
   description: string;
   images: string[];

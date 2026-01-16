@@ -9,13 +9,12 @@ import {
     orderBy,
     query,
     QueryDocumentSnapshot,
-    startAfter,
-    where
+    startAfter
 } from 'firebase/firestore';
 import { Car } from '../../types/firebase';
 
 export const carService = {
-    // Lấy tất cả xe
+    // 1. LẤY TẤT CẢ XE (Phân trang và giữ dữ liệu cũ)
     getAllCars: async (
         pageSize: number = 10,
         lastDoc?: QueryDocumentSnapshot<DocumentData>
@@ -42,7 +41,6 @@ export const carService = {
                     name: data.name || 'Chưa có tên',
                     brand: data.brand || 'Khác',
                     price: data.price || 0,
-                    year: data.year || 2024,
                     image_url: data.image_url || 'https://via.placeholder.com/400x200?text=No+Image',
                 } as Car;
             });
@@ -54,30 +52,30 @@ export const carService = {
         }
     },
 
-    // --- HÀM TÌM KIẾM MỚI ĐƯỢC BỔ SUNG ---
+    // 2. HÀM TÌM KIẾM (Đã sửa lỗi không ra kết quả)
     searchCars: async (searchText: string): Promise<Car[]> => {
         try {
-            // Bước 1: Lấy các xe có status là available từ Firestore
-            const q = query(
-                collection(db, 'cars'),
-                where('status', '==', 'available')
-            );
+            const searchLower = searchText.toLowerCase();
+
+            // BỎ điều kiện where('status', '==', 'available') vì dữ liệu mẫu chưa có trường này
+            const q = query(collection(db, 'cars'));
 
             const querySnapshot = await getDocs(q);
 
-            // Bước 2: Lọc thủ công ở Client để tìm kiếm không phân biệt hoa thường và linh hoạt hơn
-            const searchLower = searchText.toLowerCase();
-
             const results = querySnapshot.docs
-                .map(doc => ({ id: doc.id, ...doc.data() } as Car))
+                .map(doc => {
+                    const data = doc.data();
+                    return { id: doc.id, ...data } as Car;
+                })
                 .filter(car => {
-                    const name = car.name?.toLowerCase() || '';
-                    const brand = car.brand?.toLowerCase() || '';
-                    const model = car.model?.toLowerCase() || '';
+                    // Kiểm tra an toàn để tránh lỗi nếu dữ liệu thiếu trường
+                    const name = (car.name || '').toLowerCase();
+                    const brand = (car.brand || '').toLowerCase();
+                    const desc = (car.description || '').toLowerCase();
 
                     return name.includes(searchLower) ||
                         brand.includes(searchLower) ||
-                        model.includes(searchLower);
+                        desc.includes(searchLower);
                 });
 
             return results;
@@ -87,6 +85,7 @@ export const carService = {
         }
     },
 
+    // 3. LẤY CHI TIẾT XE
     getCarById: async (carId: string): Promise<Car | null> => {
         try {
             const carDoc = await getDoc(doc(db, 'cars', carId));
@@ -95,8 +94,6 @@ export const carService = {
                 return {
                     id: carDoc.id,
                     ...data,
-                    price: data.price || 0,
-                    year: data.year || 2024
                 } as Car;
             }
             return null;

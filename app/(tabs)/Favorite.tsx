@@ -1,5 +1,5 @@
 import { useFocusEffect, useRouter } from 'expo-router';
-import { ArrowRight, Heart, HeartOff } from 'lucide-react-native';
+import { ArrowRight, Heart } from 'lucide-react-native';
 import React, { useCallback, useState } from 'react';
 import {
   Alert,
@@ -25,6 +25,7 @@ export default function FavoritesScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
+  // Hàm tải danh sách xe yêu thích
   const loadFavorites = async (showLoading = true) => {
     if (!user?.uid) {
       setLoading(false);
@@ -35,6 +36,7 @@ export default function FavoritesScreen() {
       const data = await favoriteService.getUserFavorites(user.uid);
       setFavorites(data);
     } catch (error) {
+      console.error("Error loading favorites:", error);
       Alert.alert('Lỗi', 'Không thể tải danh sách yêu thích');
     } finally {
       setLoading(false);
@@ -42,6 +44,7 @@ export default function FavoritesScreen() {
     }
   };
 
+  // Tự động tải lại dữ liệu mỗi khi người dùng quay lại màn hình này
   useFocusEffect(
     useCallback(() => {
       loadFavorites();
@@ -53,32 +56,13 @@ export default function FavoritesScreen() {
     loadFavorites(false);
   };
 
-  const handleRemove = async (carId: string, carName: string) => {
-    if (!user?.uid) return;
-    Alert.alert('Thông báo', `Bỏ "${carName}" khỏi danh sách yêu thích?`, [
-      { text: 'Hủy', style: 'cancel' },
-      {
-        text: 'Đồng ý',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await favoriteService.removeFavorite(user.uid, carId);
-            setFavorites(prev => prev.filter(c => c.id !== carId));
-          } catch (error) {
-            Alert.alert('Lỗi', 'Không thể xóa xe khỏi danh sách');
-          }
-        }
-      }
-    ]);
-  };
-
   if (loading) return <Loading />;
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
-      {/* HEADER: Chữ đen in đậm, nền trắng */}
+      {/* HEADER */}
       <View style={styles.header}>
         <Text style={styles.title}>Bộ sưu tập</Text>
         <Text style={styles.subtitle}>{favorites.length} xe đã lưu</Text>
@@ -93,20 +77,14 @@ export default function FavoritesScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor="#000000" // Màu xoay cho iOS
-            colors={["#000000"]} // Màu xoay cho Android
+            tintColor="#000000"
+            colors={["#000000"]}
           />
         }
         renderItem={({ item }) => (
           <View style={styles.cardWrapper}>
+            {/* Chỉ hiển thị Card xe, bỏ phần nút xóa phía dưới */}
             <CarCard car={item} />
-            <TouchableOpacity
-              style={styles.removeAction}
-              onPress={() => handleRemove(item.id, item.name)}
-            >
-              <HeartOff size={16} color="#000000" />
-              <Text style={styles.removeText}>Xóa khỏi yêu thích</Text>
-            </TouchableOpacity>
           </View>
         )}
         ListEmptyComponent={
@@ -160,31 +138,16 @@ const styles = StyleSheet.create({
   cardWrapper: {
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
-    marginBottom: 25,
+    marginBottom: 20, // Khoảng cách giữa các xe
     borderWidth: 1,
     borderColor: '#F0F0F0',
     overflow: 'hidden',
-    // Đổ bóng nhẹ
+    // Đổ bóng nhẹ để làm nổi bật card
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 8,
     elevation: 2,
-  },
-  removeAction: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 14,
-    backgroundColor: '#FAFAFA',
-    borderTopWidth: 1,
-    borderTopColor: '#EEEEEE'
-  },
-  removeText: {
-    marginLeft: 8,
-    color: '#000000',
-    fontWeight: '600',
-    fontSize: 13
   },
   empty: {
     alignItems: 'center',

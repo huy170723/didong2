@@ -1,11 +1,14 @@
 import { auth, db } from '@/config/firebase';
 import {
+  EmailAuthProvider,
   User,
   createUserWithEmailAndPassword,
   onAuthStateChanged,
+  reauthenticateWithCredential,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signOut,
+  updatePassword,
   updateProfile
 } from 'firebase/auth';
 import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
@@ -17,7 +20,7 @@ interface UserData {
   displayName?: string | null;
   phoneNumber?: string | null;
   photoURL?: string | null;
-  address?: string | null; // THÊM TRƯỜNG NÀY
+  address?: string | null;
   createdAt: Date;
   lastLogin: Date;
   role?: 'user' | 'admin' | 'seller';
@@ -31,8 +34,10 @@ interface AuthContextType {
   register: (email: string, password: string, name: string) => Promise<void>;
   logout: () => Promise<void>;
   updateUserProfile: (data: { displayName?: string; photoURL?: string }) => Promise<void>;
-  updateUserData: (data: Partial<UserData>) => Promise<void>; // THÊM HÀM NÀY
+  updateUserData: (data: Partial<UserData>) => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
+  // HÀM MỚI
+  changePassword: (oldPassword: string, newPassword: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -111,13 +116,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUserData(null);
   };
 
-  // HÀM CẬP NHẬT DỮ LIỆU LINH HOẠT
   const updateUserData = async (data: Partial<UserData>) => {
     if (!user) return;
     try {
       const userRef = doc(db, 'users', user.uid);
+      // Merge: true để giữ lại các trường dữ liệu cũ không nằm trong data mới
       await setDoc(userRef, data, { merge: true });
-      await fetchUserData(user.uid, user); // Load lại dữ liệu mới lên UI
+      await fetchUserData(user.uid, user);
     } catch (error) {
       console.error(error);
       throw error;
@@ -130,12 +135,44 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await updateUserData(data);
   };
 
+  // HÀM ĐỔI MẬT KHẨU MỚI
+  const changePassword = async (oldPassword: string, newPassword: string) => {
+    if (!user || !user.email) throw new Error("User not authenticated");
+
+    try {
+      // 1. Tạo credential từ email và mật khẩu cũ của người dùng
+      const credential = EmailAuthProvider.credential(user.email, oldPassword);
+
+      // 2. Xác thực lại người dùng (Bắt buộc để đổi mật khẩu/email)
+      await reauthenticateWithCredential(user, credential);
+
+      // 3. Tiến hành cập nhật mật khẩu mới
+      await updatePassword(user, newPassword);
+
+      console.log("Password updated successfully");
+    } catch (error) {
+      console.error("Error changing password:", error);
+      throw error;
+    }
+  };
+
   const resetPassword = async (email: string) => {
     await sendPasswordResetEmail(auth, email);
   };
 
   return (
-    <AuthContext.Provider value={{ user, userData, loading, login, register, logout, updateUserProfile, updateUserData, resetPassword }}>
+    <AuthContext.Provider value={{
+      user,
+      userData,
+      loading,
+      login,
+      register,
+      logout,
+      updateUserProfile,
+      updateUserData,
+      resetPassword,
+      changePassword // Export hàm mới
+    }}>
       {children}
     </AuthContext.Provider>
   );
