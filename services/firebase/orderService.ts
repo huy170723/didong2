@@ -1,4 +1,4 @@
-import { db } from '@/app/config/firebase';
+import { db } from '@/config/firebase';
 import { addDoc, collection, getDocs, query, serverTimestamp, where } from 'firebase/firestore';
 import { Car } from '../../types/firebase';
 

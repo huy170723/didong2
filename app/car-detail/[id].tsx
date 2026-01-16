@@ -3,7 +3,6 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Image,
   SafeAreaView,
   ScrollView,
@@ -12,15 +11,12 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
-import { useAuth } from '../../contexts/AuthContext';
 import { carService } from '../../services/firebase/carService';
-import { orderService } from '../../services/firebase/orderService';
 import { Car } from '../../types/firebase';
 
 export default function CarDetailScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
-  const { user } = useAuth();
 
   const [car, setCar] = useState<Car | null>(null);
   const [loading, setLoading] = useState(true);
@@ -42,29 +38,10 @@ export default function CarDetailScreen() {
     }
   };
 
-  const handleAddToCart = async () => {
-    if (!user) {
-      Alert.alert("Thông báo", "Vui lòng đăng nhập để thêm vào giỏ hàng");
-      return;
-    }
-
-    if (!car) return;
-
-    try {
-      await orderService.addToCart(user.uid, car);
-      Alert.alert("Thành công", "Đã thêm xe vào giỏ hàng của bạn", [
-        { text: "Tiếp tục xem", style: "cancel" },
-        { text: "Đến giỏ hàng", onPress: () => router.push('/Orders') }
-      ]);
-    } catch (error) {
-      Alert.alert("Lỗi", "Không thể thêm vào giỏ hàng");
-    }
-  };
-
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#007AFF" /> {/* ← direct color */}
+        <ActivityIndicator size="large" color="#007AFF" />
       </View>
     );
   }
@@ -94,7 +71,7 @@ export default function CarDetailScreen() {
         />
 
         <View style={styles.content}>
-          <Text style={styles.brand}>#007AFF</Text> {/* ← direct */}
+          <Text style={styles.brand}>{car.brand || 'Luxury Edition'}</Text>
           <Text style={styles.name}>{car.name}</Text>
           <Text style={styles.price}>
             {car.price?.toLocaleString('vi-VN')} VNĐ
@@ -102,7 +79,7 @@ export default function CarDetailScreen() {
 
           <View style={styles.specContainer}>
             <View style={styles.specItem}>
-              <Ionicons name="calendar-outline" size={20} color="#007AFF" /> {/* ← direct */}
+              <Ionicons name="calendar-outline" size={20} color="#007AFF" />
               <Text style={styles.specText}>{car.year}</Text>
             </View>
             <View style={styles.specItem}>
@@ -137,8 +114,8 @@ export default function CarDetailScreen() {
         </View>
       </ScrollView>
 
+      {/* Footer chỉ còn nút Liên hệ */}
       <View style={styles.footer}>
-
         <TouchableOpacity style={styles.contactButton}>
           <Text style={styles.contactButtonText}>Liên hệ ngay</Text>
         </TouchableOpacity>
@@ -155,13 +132,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee'
+    borderBottomColor: '#eee',
+    marginTop: 40, // Tránh tai thỏ trên điện thoại
   },
   backButton: { padding: 8 },
   headerTitle: { fontSize: 18, fontWeight: 'bold', marginLeft: 16 },
   mainImage: { width: '100%', height: 250, resizeMode: 'cover' },
   content: { padding: 20 },
-  brand: { fontSize: 16, color: '#007AFF', fontWeight: '600' },          // ← direct
+  brand: { fontSize: 16, color: '#007AFF', fontWeight: '600' },
   name: { fontSize: 24, fontWeight: 'bold', marginVertical: 4 },
   price: { fontSize: 20, color: '#e74c3c', fontWeight: 'bold', marginBottom: 20 },
   specContainer: {
@@ -181,7 +159,7 @@ const styles = StyleSheet.create({
   infoValue: { fontWeight: '500' },
   footer: { padding: 20, borderTopWidth: 1, borderTopColor: '#eee' },
   contactButton: {
-    backgroundColor: '#007AFF',       // ← direct (thay colors.primary)
+    backgroundColor: '#007AFF',
     padding: 16,
     borderRadius: 12,
     alignItems: 'center'

@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
-  Platform,
+  Platform, // Thêm Platform
   SafeAreaView,
   ScrollView,
   StatusBar,
@@ -25,23 +25,34 @@ const Login = () => {
   const { login } = useAuth();
   const router = useRouter();
 
+  // --- HÀM THÔNG BÁO TƯƠNG THÍCH WEB & MOBILE ---
+  const notify = (title: string, message: string) => {
+    if (Platform.OS === 'web') {
+      window.alert(`${title}: ${message}`);
+    } else {
+      Alert.alert(title, message);
+    }
+  };
+
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
-      Alert.alert('Lỗi', 'Vui lòng nhập đầy đủ thông tin');
+      notify('Lỗi', 'Vui lòng nhập đầy đủ thông tin');
       return;
     }
 
     if (!/\S+@\S+\.\S+/.test(email)) {
-      Alert.alert('Lỗi', 'Email không hợp lệ');
+      notify('Lỗi', 'Email không hợp lệ');
       return;
     }
 
     setIsLoading(true);
     try {
       await login(email, password);
+      // Thông báo thành công nếu cần (tùy chọn)
       router.replace('/(tabs)');
     } catch (error: any) {
-      Alert.alert('Lỗi đăng nhập', error.message);
+      // Hiển thị lỗi từ Firebase hoặc AuthContext
+      notify('Lỗi đăng nhập', error.message || 'Sai email hoặc mật khẩu');
     } finally {
       setIsLoading(false);
     }
@@ -126,7 +137,7 @@ const Login = () => {
               <Text style={styles.forgotPasswordText}>Quên mật khẩu?</Text>
             </TouchableOpacity>
 
-            {/* Login Button - Changed to Black with White Text */}
+            {/* Login Button */}
             <TouchableOpacity
               style={[
                 styles.loginButton,
@@ -148,7 +159,7 @@ const Login = () => {
               <View style={styles.dividerLine} />
             </View>
 
-            {/* Social Buttons - Kept Original Colors from Image 2 */}
+            {/* Social Buttons */}
             <View style={styles.socialButtons}>
               <TouchableOpacity style={styles.socialButton}>
                 <Ionicons name="logo-google" size={22} color="#DB4437" />
@@ -174,6 +185,7 @@ const Login = () => {
   );
 };
 
+// Giữ nguyên phần styles của bạn
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FFFFFF' },
   keyboardView: { flex: 1 },
@@ -196,14 +208,14 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 16,
     borderColor: '#EEE',
-    backgroundColor: '#F8F9FA' // Light gray background for inputs as per Image 1
+    backgroundColor: '#F8F9FA'
   },
   inputIcon: { marginRight: 12 },
   input: { flex: 1, paddingVertical: 14, fontSize: 16, color: '#000' },
   forgotPasswordButton: { alignSelf: 'flex-end', marginBottom: 30 },
   forgotPasswordText: { fontSize: 14, fontWeight: '600', color: '#000' },
   loginButton: {
-    backgroundColor: '#000', // Black background
+    backgroundColor: '#000',
     borderRadius: 12, paddingVertical: 16, flexDirection: 'row',
     justifyContent: 'center', alignItems: 'center', gap: 10,
     elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 4 },

@@ -1,4 +1,4 @@
-import { db } from '@/app/config/firebase';
+import { db } from '@/config/firebase';
 import {
     collection,
     deleteDoc,
@@ -8,6 +8,7 @@ import {
     query,
     serverTimestamp // Dùng cái này tốt hơn new Date() cho DB
     ,
+
     setDoc,
     where
 } from 'firebase/firestore';

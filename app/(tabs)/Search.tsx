@@ -136,7 +136,7 @@ export default function SearchScreen() {
             loading ? (
               <View style={styles.empty}>
                 <ActivityIndicator size="small" color="#000000" />
-                <Text style={styles.emptyText}>Đang lấy dữ liệu...</Text>
+                <Text style={styles.emptyText}>Đang tải...</Text>
               </View>
             ) : searchPerformed ? (
               <View style={styles.empty}>

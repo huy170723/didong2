@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
-  Platform,
+  Platform, // Thêm Platform để kiểm tra Web/Mobile
   SafeAreaView,
   ScrollView,
   StatusBar,
@@ -29,25 +29,36 @@ const Register = () => {
   const { register } = useAuth();
   const router = useRouter();
 
+  // --- HÀM THÔNG BÁO DÙNG CHUNG CHO CẢ WEB VÀ MOBILE ---
+  const notify = (title: string, message: string) => {
+    if (Platform.OS === 'web') {
+      // Trên web dùng alert của trình duyệt
+      window.alert(`${title}: ${message}`);
+    } else {
+      // Trên điện thoại dùng Alert của React Native
+      Alert.alert(title, message);
+    }
+  };
+
   const validateForm = () => {
     if (!name.trim()) {
-      Alert.alert('Lỗi', 'Vui lòng nhập họ tên');
+      notify('Lỗi', 'Vui lòng nhập họ tên');
       return false;
     }
     if (!email.trim() || !/\S+@\S+\.\S+/.test(email)) {
-      Alert.alert('Lỗi', 'Email không hợp lệ');
+      notify('Lỗi', 'Email không hợp lệ');
       return false;
     }
     if (password.length < 6) {
-      Alert.alert('Lỗi', 'Mật khẩu phải có ít nhất 6 ký tự');
+      notify('Lỗi', 'Mật khẩu phải có ít nhất 6 ký tự');
       return false;
     }
     if (password !== confirmPassword) {
-      Alert.alert('Lỗi', 'Mật khẩu xác nhận không khớp');
+      notify('Lỗi', 'Mật khẩu xác nhận không khớp');
       return false;
     }
     if (!agreeToTerms) {
-      Alert.alert('Lỗi', 'Vui lòng đồng ý với điều khoản sử dụng');
+      notify('Lỗi', 'Vui lòng đồng ý với điều khoản sử dụng');
       return false;
     }
     return true;
@@ -58,13 +69,14 @@ const Register = () => {
     setIsLoading(true);
     try {
       await register(email, password, name);
-      Alert.alert(
-        '🎉 Thành công',
-        'Tài khoản đã được tạo. Vui lòng đăng nhập.',
-        [{ text: 'Đăng nhập', onPress: () => router.replace('/login') }]
-      );
+
+      notify('🎉 Thành công', 'Tài khoản đã được tạo thành công');
+
+      // Chờ người dùng nhấn OK trên alert xong mới chuyển trang (đối với Web)
+      router.replace('/login');
+
     } catch (error: any) {
-      Alert.alert('❌ Lỗi', error.message);
+      notify('❌ Lỗi', error.message || 'Đã có lỗi xảy ra');
     } finally {
       setIsLoading(false);
     }
@@ -130,7 +142,7 @@ const Register = () => {
               </Text>
             </View>
 
-            {/* Submit Button - Changed to Black */}
+            {/* Submit Button */}
             <TouchableOpacity
               style={[
                 styles.registerButton,
@@ -158,7 +170,7 @@ const Register = () => {
   );
 };
 
-// Component con
+// Component con giữ nguyên...
 const InputBox = ({ label, icon, value, onChange, placeholder, secure = false, rightIcon = null, onIconPress = null, keyboardType = 'default' }: any) => (
   <View style={styles.inputContainer}>
     <Text style={styles.label}>{label}</Text>
