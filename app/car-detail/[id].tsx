@@ -3,14 +3,13 @@ import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Image,
   SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from 'react-native';
 import { carService } from '../../services/firebase/carService';
 import { Car } from '../../types/firebase';
@@ -68,7 +67,7 @@ export default function CarDetailScreen() {
 
       <ScrollView showsVerticalScrollIndicator={false}>
         <Image
-          source={{ uri: car.image_url || car.images?.[0] }}
+          source={{ uri: car.imageUrl || car.images?.[0] }}
           style={styles.mainImage}
         />
 
@@ -141,7 +140,7 @@ export default function CarDetailScreen() {
                 carId: car.id,
                 name: car.name,
                 price: car.price,
-                image: car.image_url || car.images?.[0],
+                image: car.imageUrl || car.images?.[0],
               },
             })
           }
@@ -149,12 +148,7 @@ export default function CarDetailScreen() {
           <Text style={styles.buttonText}>Đặt cọc xe</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[styles.button, styles.contactButton]}
-          onPress={() => Alert.alert("Liên hệ", "Hotline: 1900 xxxx")}
-        >
-          <Text style={styles.buttonText}>Liên hệ ngay</Text>
-        </TouchableOpacity>
+
       </View>
     </SafeAreaView>
   );

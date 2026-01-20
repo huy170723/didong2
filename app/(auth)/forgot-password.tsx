@@ -1,6 +1,7 @@
 import { Link, router } from 'expo-router';
+import { sendPasswordResetEmail } from 'firebase/auth';
 import { ArrowLeft, Mail } from 'lucide-react-native';
-import React, { useState } from "react";
+import React, { useState } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
@@ -10,59 +11,97 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import Button from '../../components/ui/Button';
-import Input from '../../components/ui/Input';
+
+import Button from '@/components/ui/Button';
+import Input from '@/components/ui/Input';
+import { auth } from '@/config/firebase';
 
 export default function ForgotPasswordScreen() {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleResetPassword = async () => {
-    if (!email.trim()) {
+    const trimmedEmail = email.trim().toLowerCase();
+
+    if (!trimmedEmail) {
       Alert.alert('Lỗi', 'Vui lòng nhập email');
       return;
     }
 
-    if (!/\S+@\S+\.\S+/.test(email)) {
+    if (!/\S+@\S+\.\S+/.test(trimmedEmail)) {
       Alert.alert('Lỗi', 'Email không hợp lệ');
       return;
     }
 
+    console.log('[DEBUG] Bắt đầu gửi reset password cho:', trimmedEmail);
+
     try {
       setLoading(true);
-      // Giả lập gửi reset password
-      await new Promise(resolve => setTimeout(resolve, 1500));
+
+      console.log('[DEBUG] Đang gửi email reset...');
+
+      await sendPasswordResetEmail(auth, trimmedEmail, {
+        // CHỈ dùng domain gốc đã được Authorized
+        url: 'https://app-car-56a56.firebaseapp.com',
+
+        // true: cho phép mở lại ứng dụng sau khi hoàn tất trên trình duyệt
+        handleCodeInApp: true,
+      });
+
+      console.log('[DEBUG] GỬI THÀNH CÔNG (Firebase resolved)');
 
       Alert.alert(
         'Thành công',
-        'Link đặt lại mật khẩu đã được gửi đến email của bạn. Vui lòng kiểm tra hộp thư.',
-        [{ text: 'Về trang đăng nhập', onPress: () => router.replace('/login') }]
+        'Link đặt lại mật khẩu đã được gửi đến email của bạn.\n\n' +
+        'Vui lòng kiểm tra:\n' +
+        '- Hộp thư đến (Inbox)\n' +
+        '- Thư rác / Spam\n' +
+        '- Tab Promotions / Social (nếu dùng Gmail)\n\n' +
+        'Nếu không thấy sau 5-10 phút, thử gửi test từ Firebase Console hoặc kiểm tra lại spam.',
+        [
+          {
+            text: 'Về đăng nhập',
+            onPress: () => router.replace('/(auth)/login'),
+          },
+        ]
       );
-    } catch (error) {
-      Alert.alert('Lỗi', 'Đã xảy ra lỗi. Vui lòng thử lại');
+    } catch (error: any) {
+      console.error('[ERROR] RESET PASSWORD FAILED:', {
+        code: error.code,
+        message: error.message,
+      });
+
+      let msg = 'Không thể gửi email. Vui lòng thử lại sau.';
+      if (error.code === 'auth/invalid-email') msg = 'Email không hợp lệ';
+      if (error.code === 'auth/too-many-requests') {
+        msg = 'Quá nhiều yêu cầu. Chờ 5-10 phút rồi thử lại';
+      }
+      // Không hiển thị user-not-found để tránh leak
+      Alert.alert('Lỗi', `${msg}\n(Mã lỗi: ${error.code || 'unknown'})`);
     } finally {
       setLoading(false);
+      console.log('[DEBUG] Hoàn tất xử lý reset password');
     }
   };
 
   return (
     <KeyboardAvoidingView
-      style={[styles.container, { backgroundColor: '#FFFFFF' }]}
+      style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <View style={styles.content}>
-        {/* Nút Back - Đổi sang màu Đen */}
+        {/* Back */}
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => router.back()}
         >
-          <ArrowLeft size={24} color="#000000" />
+          <ArrowLeft size={24} color="#000" />
         </TouchableOpacity>
 
         <View style={styles.header}>
-          <Text style={[styles.title, { color: '#000000' }]}>Quên mật khẩu</Text>
-          <Text style={[styles.subtitle, { color: '#666' }]}>
-            Nhập email của bạn để nhận link đặt lại mật khẩu qua email
+          <Text style={styles.title}>Quên mật khẩu</Text>
+          <Text style={styles.subtitle}>
+            Nhập email để nhận link đặt lại mật khẩu
           </Text>
         </View>
 
@@ -73,32 +112,25 @@ export default function ForgotPasswordScreen() {
             onChangeText={setEmail}
             keyboardType="email-address"
             autoCapitalize="none"
-            // Màu icon và màu chữ input đổi sang tông đen/xám đậm
-            leftIcon={<Mail size={20} color="#666666" />}
-            style={{ backgroundColor: '#F9F9F9', borderColor: '#EEEEEE', color: '#000000' }}
+            leftIcon={<Mail size={20} color="#666" />}
           />
 
           <Button
             title="Gửi link đặt lại mật khẩu"
             onPress={handleResetPassword}
             loading={loading}
-            // Nút bấm đổi sang nền Đen chữ Trắng
-            style={StyleSheet.flatten([
-              styles.resetButton,
-              { backgroundColor: '#000000' }
-            ])}
-            textStyle={{ color: '#FFFFFF' }}
+            style={styles.resetButton}
           />
 
           <View style={styles.divider}>
-            <View style={[styles.dividerLine, { backgroundColor: '#EEEEEE' }]} />
+            <View style={styles.line} />
             <Text style={styles.dividerText}>Hoặc</Text>
-            <View style={[styles.dividerLine, { backgroundColor: '#EEEEEE' }]} />
+            <View style={styles.line} />
           </View>
 
-          <Link href="/login" asChild>
-            <TouchableOpacity style={styles.backToLoginBtn}>
-              <Text style={{ color: '#000000', fontWeight: 'bold', textAlign: 'center' }}>
+          <Link href="/(auth)/login" asChild>
+            <TouchableOpacity>
+              <Text style={styles.backLoginText}>
                 Quay lại đăng nhập
               </Text>
             </TouchableOpacity>
@@ -109,9 +141,11 @@ export default function ForgotPasswordScreen() {
   );
 }
 
+// Styles giữ nguyên
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#fff',
   },
   content: {
     flex: 1,
@@ -134,38 +168,34 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 16,
-    lineHeight: 24,
+    color: '#666',
   },
   form: {
-    gap: 10,
+    gap: 12,
   },
   resetButton: {
     marginTop: 10,
-    borderRadius: 12,
     height: 55,
-    justifyContent: 'center',
-    // Đổ bóng nhẹ cho nút đen thêm sang trọng
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    borderRadius: 12,
+    backgroundColor: '#000',
   },
   divider: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: 25,
+    marginVertical: 20,
   },
-  dividerLine: {
+  line: {
     flex: 1,
     height: 1,
+    backgroundColor: '#eee',
   },
   dividerText: {
     marginHorizontal: 16,
     color: '#999',
-    fontSize: 14,
   },
-  backToLoginBtn: {
-    padding: 15,
-  }
+  backLoginText: {
+    textAlign: 'center',
+    fontWeight: 'bold',
+    color: '#000',
+  },
 });

@@ -70,7 +70,7 @@ export default function CarCard({ car, onPress }: CarCardProps) {
       onPress={handlePress} // 4. Sử dụng hàm handlePress
       activeOpacity={0.8}
     >
-      <Image source={{ uri: car.image_url }} style={styles.image} />
+      <Image source={{ uri: car.imageUrl }} style={styles.image} />
 
       <View style={styles.content}>
         <View style={styles.header}>

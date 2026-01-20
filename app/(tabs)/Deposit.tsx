@@ -149,7 +149,7 @@ export default function DepositScreen() {
                             onPress={() => setService(type)}
                         >
                             <Text style={service === type ? styles.optTextActive : styles.optText}>
-                                {type === 'normal' ? 'Gói Cơ bản' : type === 'pro' ? 'Gói Chuyên nghiệp' : 'Gói Hoàng Gia VIP'}
+                                {type === 'normal' ? 'Gói Cơ bản' : type === 'pro' ? 'Gói Thường' : 'Gói VIP'}
                                 {` (+${servicePrice[type].toLocaleString()} đ)`}
                             </Text>
                         </TouchableOpacity>

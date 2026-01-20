@@ -12,7 +12,7 @@ export interface Car {
   color: string;
   description: string;
   images: string[];
-  image_url: string;
+  imageUrl: string;
   status: 'available' | 'rented' | 'maintenance';
   createdAt: Date;
   updatedAt: Date;

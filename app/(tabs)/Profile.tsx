@@ -229,7 +229,7 @@ export default function ProfileScreen() {
               label="Đổi mật khẩu bảo mật"
               onPress={() => openEditModal('password')}
             />
-            <MenuLink icon={<Clock size={20} color="#000" />} label="Lịch sử đặt cọc" onPress={() => router.push('/History' as any)} />
+            <MenuLink icon={<Clock size={20} color="#000" />} label="Lịch sử đặt cọc" onPress={() => router.push('/history' as any)} />
             <MenuLink icon={<Heart size={20} color="#000" />} label="Xe yêu thích" onPress={() => router.push('/Favorite' as any)} isLast />
           </View>
         </View>
