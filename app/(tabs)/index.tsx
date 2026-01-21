@@ -174,7 +174,7 @@ export default function HomeScreen() {
         />
         <View style={styles.bannerTextContainer}>
           <Text style={styles.bannerTitle}>New Season Sale</Text>
-          <Text style={styles.bannerSub}>Giảm giá lên đến 20%</Text>
+
         </View>
       </View>
 

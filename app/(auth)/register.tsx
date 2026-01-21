@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
-  Platform, // Thêm Platform để kiểm tra Web/Mobile
+  Platform,
   SafeAreaView,
   ScrollView,
   StatusBar,
@@ -29,34 +29,45 @@ const Register = () => {
   const { register } = useAuth();
   const router = useRouter();
 
-  // --- HÀM THÔNG BÁO DÙNG CHUNG CHO CẢ WEB VÀ MOBILE ---
   const notify = (title: string, message: string) => {
     if (Platform.OS === 'web') {
-      // Trên web dùng alert của trình duyệt
       window.alert(`${title}: ${message}`);
     } else {
-      // Trên điện thoại dùng Alert của React Native
       Alert.alert(title, message);
     }
   };
 
   const validateForm = () => {
+    // 1. Kiểm tra tên (Chỉ chữ)
     if (!name.trim()) {
       notify('Lỗi', 'Vui lòng nhập họ tên');
       return false;
     }
+
+    // 2. Kiểm tra Email
     if (!email.trim() || !/\S+@\S+\.\S+/.test(email)) {
       notify('Lỗi', 'Email không hợp lệ');
       return false;
     }
+
+    // 3. Kiểm tra Mật khẩu (6-20 ký tự, chữ và số)
     if (password.length < 6) {
       notify('Lỗi', 'Mật khẩu phải có ít nhất 6 ký tự');
       return false;
     }
+
+    // Check lại lần cuối để đề phòng copy-paste ký tự đặc biệt
+    const alphaNumericRegex = /^[a-zA-Z0-9]+$/;
+    if (!alphaNumericRegex.test(password)) {
+      notify('Lỗi', 'Mật khẩu chỉ được chứa chữ cái và chữ số');
+      return false;
+    }
+
     if (password !== confirmPassword) {
       notify('Lỗi', 'Mật khẩu xác nhận không khớp');
       return false;
     }
+
     if (!agreeToTerms) {
       notify('Lỗi', 'Vui lòng đồng ý với điều khoản sử dụng');
       return false;
@@ -69,12 +80,8 @@ const Register = () => {
     setIsLoading(true);
     try {
       await register(email, password, name);
-
       notify('🎉 Thành công', 'Tài khoản đã được tạo thành công');
-
-      // Chờ người dùng nhấn OK trên alert xong mới chuyển trang (đối với Web)
       router.replace('/login');
-
     } catch (error: any) {
       notify('❌ Lỗi', error.message || 'Đã có lỗi xảy ra');
     } finally {
@@ -111,21 +118,47 @@ const Register = () => {
 
           {/* Form */}
           <View style={styles.form}>
-            <InputBox label="Họ tên" icon="person-outline" value={name} onChange={setName} placeholder="Nguyễn Văn A" />
-            <InputBox label="Email" icon="mail-outline" value={email} onChange={setEmail} placeholder="email@gmail.com" keyboardType="email-address" />
-
+            {/* HỌ TÊN: Chặn nhập số trực tiếp bằng regex */}
             <InputBox
-              label="Mật khẩu" icon="lock-closed-outline" value={password} onChange={setPassword} placeholder="••••••"
-              secure={!showPassword}
-              onIconPress={() => setShowPassword(!showPassword)}
-              rightIcon={showPassword ? "eye-off-outline" : "eye-outline"}
+              label="Họ tên"
+              icon="person-outline"
+              value={name}
+              onChange={(text: string) => setName(text.replace(/[0-9]/g, ''))}
+              placeholder="Nguyễn Văn A"
             />
 
             <InputBox
-              label="Xác nhận mật khẩu" icon="lock-closed-outline" value={confirmPassword} onChange={setConfirmPassword} placeholder="••••••"
+              label="Email"
+              icon="mail-outline"
+              value={email}
+              onChange={setEmail}
+              placeholder="email@gmail.com"
+              keyboardType="email-address"
+            />
+
+            {/* MẬT KHẨU: Chặn ký tự đặc biệt và giới hạn 20 ký tự */}
+            <InputBox
+              label="Mật khẩu (Tối đa 20 ký tự chữ & số)"
+              icon="lock-closed-outline"
+              value={password}
+              onChange={(text: string) => setPassword(text.replace(/[^a-zA-Z0-9]/g, ''))}
+              placeholder="••••••"
+              secure={!showPassword}
+              onIconPress={() => setShowPassword(!showPassword)}
+              rightIcon={showPassword ? "eye-off-outline" : "eye-outline"}
+              maxLength={20}
+            />
+
+            <InputBox
+              label="Xác nhận mật khẩu"
+              icon="lock-closed-outline"
+              value={confirmPassword}
+              onChange={(text: string) => setConfirmPassword(text.replace(/[^a-zA-Z0-9]/g, ''))}
+              placeholder="••••••"
               secure={!showConfirmPassword}
               onIconPress={() => setShowConfirmPassword(!showConfirmPassword)}
               rightIcon={showConfirmPassword ? "eye-off-outline" : "eye-outline"}
+              maxLength={20}
             />
 
             {/* Terms */}
@@ -170,8 +203,8 @@ const Register = () => {
   );
 };
 
-// Component con giữ nguyên...
-const InputBox = ({ label, icon, value, onChange, placeholder, secure = false, rightIcon = null, onIconPress = null, keyboardType = 'default' }: any) => (
+// Component InputBox hỗ trợ maxLength
+const InputBox = ({ label, icon, value, onChange, placeholder, secure = false, rightIcon = null, onIconPress = null, keyboardType = 'default', maxLength }: any) => (
   <View style={styles.inputContainer}>
     <Text style={styles.label}>{label}</Text>
     <View style={styles.inputWrapper}>
@@ -185,6 +218,7 @@ const InputBox = ({ label, icon, value, onChange, placeholder, secure = false, r
         secureTextEntry={secure}
         keyboardType={keyboardType}
         autoCapitalize="none"
+        maxLength={maxLength}
       />
       {rightIcon && (
         <TouchableOpacity onPress={onIconPress}>

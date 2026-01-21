@@ -1,19 +1,20 @@
 import { Stack } from 'expo-router';
 import React from "react";
-import ChatBubble from '../components/ChatBubble'; // Đảm bảo đường dẫn này đúng với file bạn đã tạo
+import { View } from 'react-native';
+import ChatBubble from '../components/ChatBubble';
 import { AuthProvider } from '../contexts/AuthContext';
 
+// BẮT BUỘC phải có từ khóa "export default"
 export default function RootLayout() {
   return (
     <AuthProvider>
-      {/* Không cần View bọc flex:1 ở đây nếu Stack đã chiếm toàn màn hình */}
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="(auth)" />
-        <Stack.Screen name="(tabs)" />
-      </Stack>
-
-      {/* Bong bóng chat tự bản thân nó đã có position absolute nên sẽ nổi lên trên */}
-      <ChatBubble />
+      <View style={{ flex: 1 }}>
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="(auth)" />
+          <Stack.Screen name="(tabs)" />
+        </Stack>
+        <ChatBubble />
+      </View>
     </AuthProvider>
   );
 }
